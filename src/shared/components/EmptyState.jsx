@@ -6,7 +6,9 @@ function EmptyState({ filter }) {
       ? "Completed tasks will show up here once you tick something off."
       : filter === "Active"
         ? "No active tasks right now. A rare and beautiful kind of quiet."
-        : "Your list is clear. Add one gentle task to begin.";
+        : filter === "Calendar"
+          ? "This date is open. Add a task above and it will land here."
+          : "Your list is clear. Add one gentle task to begin.";
 
   return (
     <motion.section

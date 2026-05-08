@@ -1,6 +1,15 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { Check, Pencil, Trash2, X } from "lucide-react";
+import { AnimatePresence, motion, Reorder } from "framer-motion";
+import { CalendarDays, Check, Pencil, Trash2, X } from "lucide-react";
 import { useState } from "react";
+
+function formatTaskDate(dateKey) {
+  if (!dateKey) {
+    return "No date";
+  }
+
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(year, month - 1, day));
+}
 
 function TaskItem({ task, onToggle, onDelete, onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -13,13 +22,17 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
   }
 
   return (
-    <motion.article
+    <Reorder.Item
+      value={task}
+      as="article"
       layout
       initial={{ opacity: 0, y: 12, scale: 0.98 }}
       animate={{ opacity: task.completed ? 0.66 : 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, x: -18, scale: 0.98 }}
       transition={{ duration: 0.2 }}
-      className="soft-card group flex items-center gap-3 p-4"
+      whileDrag={{ scale: 1.015 }}
+      dragListener={!isEditing}
+      className="soft-card group flex cursor-grab touch-none items-center gap-3 p-4 active:cursor-grabbing"
     >
       <button
         type="button"
@@ -56,17 +69,24 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
               </button>
             </motion.form>
           ) : (
-            <motion.p
+            <motion.div
               key="title"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className={`break-words text-sm font-medium leading-6 transition ${
-                task.completed ? "text-slate-400 line-through dark:text-slate-500" : "text-slate-800 dark:text-slate-100"
-              }`}
             >
-              {task.title}
-            </motion.p>
+              <p
+                className={`break-words text-sm font-medium leading-6 transition ${
+                  task.completed ? "text-slate-400 line-through dark:text-slate-500" : "text-slate-800 dark:text-slate-100"
+                }`}
+              >
+                {task.title}
+              </p>
+              <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-skysoft/70 px-2.5 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                {formatTaskDate(task.dueDate)}
+              </span>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
@@ -92,7 +112,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
           <Trash2 className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
-    </motion.article>
+    </Reorder.Item>
   );
 }
 

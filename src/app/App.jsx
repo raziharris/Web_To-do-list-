@@ -1,46 +1,33 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { motion, Reorder } from "framer-motion";
 import { Moon, Plus, SearchCheck, Sparkles, Sun } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import EmptyState from "./components/EmptyState.jsx";
-import FilterTabs from "./components/FilterTabs.jsx";
-import ProgressCard from "./components/ProgressCard.jsx";
-import TaskItem from "./components/TaskItem.jsx";
-
-const STORAGE_KEY = "my-tasks-react";
-const THEME_KEY = "my-tasks-theme";
-const filters = ["All", "Active", "Completed"];
-
-function fallbackTasks() {
-  return [
-    { id: crypto.randomUUID(), title: "Plan one tiny win for today", completed: false, priority: "Calm", createdAt: Date.now() - 2 },
-    { id: crypto.randomUUID(), title: "Drink water and reset the desk", completed: true, priority: "Easy", createdAt: Date.now() - 1 },
-  ];
-}
-
-function getSavedTasks() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-
-  if (!saved) {
-    return fallbackTasks();
-  }
-
-  try {
-    return JSON.parse(saved);
-  } catch {
-    return fallbackTasks();
-  }
-}
+import CalendarView from "../features/tasks/components/CalendarView.jsx";
+import FilterTabs from "../features/tasks/components/FilterTabs.jsx";
+import ProgressCard from "../features/tasks/components/ProgressCard.jsx";
+import TaskItem from "../features/tasks/components/TaskItem.jsx";
+import { taskFilters } from "../features/tasks/constants/taskFilters.js";
+import { playCompletionPing } from "../features/tasks/utils/completionSound.js";
+import { deleteTaskFromSupabase, loadTasksFromSupabase, saveTasksToSupabase } from "../features/tasks/utils/taskRepository.js";
+import { isSupabaseConfigured } from "../features/tasks/utils/supabaseClient.js";
+import { formatDateKey, loadTasks, saveTasks, THEME_STORAGE_KEY } from "../features/tasks/utils/taskStorage.js";
+import EmptyState from "../shared/components/EmptyState.jsx";
 
 function App() {
-  const [tasks, setTasks] = useState(getSavedTasks);
+  const [tasks, setTasks] = useState(() => loadTasks());
   const [newTask, setNewTask] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
-  const [isDark, setIsDark] = useState(() => localStorage.getItem(THEME_KEY) === "dark");
+  const [selectedDate, setSelectedDate] = useState(formatDateKey());
+  const [isRemoteReady, setIsRemoteReady] = useState(!isSupabaseConfigured);
+  const [isDark, setIsDark] = useState(() => localStorage.getItem(THEME_STORAGE_KEY) === "dark");
 
   const completedCount = tasks.filter((task) => task.completed).length;
   const progress = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
 
   const filteredTasks = useMemo(() => {
+    if (activeFilter === "Calendar") {
+      return tasks.filter((task) => task.dueDate === selectedDate);
+    }
+
     if (activeFilter === "Active") {
       return tasks.filter((task) => !task.completed);
     }
@@ -50,15 +37,60 @@ function App() {
     }
 
     return tasks;
-  }, [activeFilter, tasks]);
+  }, [activeFilter, selectedDate, tasks]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-  }, [tasks]);
+    saveTasks(tasks);
+
+    if (!isSupabaseConfigured || !isRemoteReady) {
+      return;
+    }
+
+    saveTasksToSupabase(tasks).catch((error) => {
+      console.warn("Could not save tasks to Supabase.", error);
+    });
+  }, [isRemoteReady, tasks]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      return;
+    }
+
+    let isMounted = true;
+    const localTasks = loadTasks();
+
+    async function syncTasksFromSupabase() {
+      try {
+        const remoteTasks = await loadTasksFromSupabase();
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (remoteTasks.length > 0) {
+          setTasks(remoteTasks);
+        } else {
+          await saveTasksToSupabase(localTasks);
+        }
+      } catch (error) {
+        console.warn("Could not load tasks from Supabase. Using local tasks for now.", error);
+      } finally {
+        if (isMounted) {
+          setIsRemoteReady(true);
+        }
+      }
+    }
+
+    syncTasksFromSupabase();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
-    localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+    localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light");
   }, [isDark]);
 
   function addTask(event) {
@@ -75,22 +107,39 @@ function App() {
         title,
         completed: false,
         priority: "Focus",
+        dueDate: selectedDate,
         createdAt: Date.now(),
       },
       ...currentTasks,
     ]);
     setNewTask("");
-    setActiveFilter("All");
+    setActiveFilter(activeFilter === "Calendar" ? "Calendar" : "All");
   }
 
   function toggleTask(taskId) {
     setTasks((currentTasks) =>
-      currentTasks.map((task) => (task.id === taskId ? { ...task, completed: !task.completed } : task)),
+      currentTasks.map((task) => {
+        if (task.id !== taskId) {
+          return task;
+        }
+
+        if (!task.completed) {
+          playCompletionPing();
+        }
+
+        return { ...task, completed: !task.completed };
+      }),
     );
   }
 
   function deleteTask(taskId) {
     setTasks((currentTasks) => currentTasks.filter((task) => task.id !== taskId));
+
+    if (isSupabaseConfigured && isRemoteReady) {
+      deleteTaskFromSupabase(taskId).catch((error) => {
+        console.warn("Could not delete task from Supabase.", error);
+      });
+    }
   }
 
   function editTask(taskId, title) {
@@ -103,6 +152,43 @@ function App() {
     setTasks((currentTasks) =>
       currentTasks.map((task) => (task.id === taskId ? { ...task, title: trimmedTitle } : task)),
     );
+  }
+
+  function taskMatchesActiveFilter(task) {
+    if (activeFilter === "Calendar") {
+      return task.dueDate === selectedDate;
+    }
+
+    if (activeFilter === "Active") {
+      return !task.completed;
+    }
+
+    if (activeFilter === "Completed") {
+      return task.completed;
+    }
+
+    return true;
+  }
+
+  function reorderVisibleTasks(reorderedVisibleTasks) {
+    setTasks((currentTasks) => {
+      let visibleIndex = 0;
+
+      return currentTasks.map((task) => {
+        if (!taskMatchesActiveFilter(task)) {
+          return task;
+        }
+
+        const reorderedTask = reorderedVisibleTasks[visibleIndex];
+        visibleIndex += 1;
+        return reorderedTask;
+      });
+    });
+  }
+
+  function selectCalendarDate(dateKey) {
+    setSelectedDate(dateKey);
+    setActiveFilter("Calendar");
   }
 
   return (
@@ -164,6 +250,17 @@ function App() {
                   maxLength={120}
                   autoComplete="off"
                 />
+                <label htmlFor="task-date" className="sr-only">
+                  Task date
+                </label>
+                <input
+                  id="task-date"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(event) => setSelectedDate(event.target.value)}
+                  className="focus-ring min-h-14 rounded-2xl border border-slate-200/80 bg-white/90 px-4 text-sm font-medium text-slate-600 outline-none transition dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-100"
+                  aria-label="Task date"
+                />
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   type="submit"
@@ -174,12 +271,22 @@ function App() {
                 </motion.button>
               </form>
 
-              <FilterTabs filters={filters} activeFilter={activeFilter} onChange={setActiveFilter} />
+              <FilterTabs filters={taskFilters} activeFilter={activeFilter} onChange={setActiveFilter} />
 
-              <div className="space-y-3" aria-live="polite">
-                <AnimatePresence mode="popLayout">
-                  {filteredTasks.length > 0 ? (
-                    filteredTasks.map((task) => (
+              {activeFilter === "Calendar" && (
+                <CalendarView tasks={tasks} selectedDate={selectedDate} onSelectDate={selectCalendarDate} />
+              )}
+
+              {filteredTasks.length > 0 ? (
+                <Reorder.Group
+                  axis="y"
+                  values={filteredTasks}
+                  onReorder={reorderVisibleTasks}
+                  as="div"
+                  className="space-y-3"
+                  aria-live="polite"
+                >
+                  {filteredTasks.map((task) => (
                       <TaskItem
                         key={task.id}
                         task={task}
@@ -187,12 +294,13 @@ function App() {
                         onDelete={deleteTask}
                         onEdit={editTask}
                       />
-                    ))
-                  ) : (
-                    <EmptyState key="empty" filter={activeFilter} />
-                  )}
-                </AnimatePresence>
-              </div>
+                    ))}
+                </Reorder.Group>
+              ) : (
+                <div aria-live="polite">
+                  <EmptyState filter={activeFilter} />
+                </div>
+              )}
             </div>
 
             <aside className="space-y-5">
