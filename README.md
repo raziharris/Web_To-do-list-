@@ -29,3 +29,15 @@ git branch -M main
 git remote add origin YOUR_GITHUB_REPO_URL
 git push -u origin main
 ```
+
+## Deploy to Vercel
+
+Use these settings:
+
+```text
+Framework Preset: Vite
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
+Root Directory: ./
+```
