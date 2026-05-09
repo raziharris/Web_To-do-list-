@@ -60,3 +60,11 @@ export async function deleteTaskFromSupabase(taskId) {
     throw error;
   }
 }
+
+export async function clearTasksFromSupabase() {
+  const { error } = await supabase.from(TASKS_TABLE).delete().not("id", "is", null);
+
+  if (error) {
+    throw error;
+  }
+}
