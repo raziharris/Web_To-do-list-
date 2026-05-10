@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
-const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const weekDays = ["S", "M", "T", "W", "T", "F", "S"];
 const monthFormatter = new Intl.DateTimeFormat("en", { month: "long", year: "numeric" });
 const selectedDateFormatter = new Intl.DateTimeFormat("en", { weekday: "long", month: "short", day: "numeric" });
 
@@ -25,16 +25,6 @@ function CalendarView({ tasks, selectedDate, onSelectDate }) {
   const taskCountByDate = useMemo(() => {
     return tasks.reduce((counts, task) => {
       counts[task.dueDate] = (counts[task.dueDate] || 0) + 1;
-      return counts;
-    }, {});
-  }, [tasks]);
-
-  const completedByDate = useMemo(() => {
-    return tasks.reduce((counts, task) => {
-      if (task.completed) {
-        counts[task.dueDate] = (counts[task.dueDate] || 0) + 1;
-      }
-
       return counts;
     }, {});
   }, [tasks]);
@@ -67,38 +57,32 @@ function CalendarView({ tasks, selectedDate, onSelectDate }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      className="soft-card p-4 sm:p-5"
+      className="pixel-panel p-4 sm:p-5"
       aria-label="Task calendar"
     >
       <div className="mb-5 flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">{monthFormatter.format(visibleMonth)}</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
-            Selected: {selectedDateFormatter.format(parseDateKey(selectedDate))}
-          </p>
-        </div>
+        <button
+          type="button"
+          onClick={() => moveMonth(-1)}
+          className="focus-ring grid h-9 w-9 place-items-center text-[#241609] transition hover:text-[#8b5b22]"
+          aria-label="Previous month"
+        >
+          <ChevronLeft className="h-7 w-7" aria-hidden="true" />
+        </button>
 
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => moveMonth(-1)}
-            className="focus-ring grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white/80 text-slate-600 transition hover:-translate-y-0.5 hover:bg-skysoft dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-100 dark:hover:bg-slate-800"
-            aria-label="Previous month"
-          >
-            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            onClick={() => moveMonth(1)}
-            className="focus-ring grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white/80 text-slate-600 transition hover:-translate-y-0.5 hover:bg-skysoft dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-100 dark:hover:bg-slate-800"
-            aria-label="Next month"
-          >
-            <ChevronRight className="h-5 w-5" aria-hidden="true" />
-          </button>
-        </div>
+        <h2 className="text-xl font-bold text-[#241609]">{monthFormatter.format(visibleMonth)}</h2>
+
+        <button
+          type="button"
+          onClick={() => moveMonth(1)}
+          className="focus-ring grid h-9 w-9 place-items-center text-[#241609] transition hover:text-[#8b5b22]"
+          aria-label="Next month"
+        >
+          <ChevronRight className="h-7 w-7" aria-hidden="true" />
+        </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-slate-400 dark:text-slate-500">
+      <div className="grid grid-cols-7 gap-2 text-center text-sm font-bold text-[#241609]">
         {weekDays.map((day) => (
           <span key={day}>{day}</span>
         ))}
@@ -112,31 +96,25 @@ function CalendarView({ tasks, selectedDate, onSelectDate }) {
 
           const date = parseDateKey(dateKey);
           const taskCount = taskCountByDate[dateKey] || 0;
-          const completedCount = completedByDate[dateKey] || 0;
           const isSelected = dateKey === selectedDate;
-          const isComplete = taskCount > 0 && completedCount === taskCount;
 
           return (
             <button
               key={dateKey}
               type="button"
               onClick={() => onSelectDate(dateKey)}
-              className={`focus-ring relative aspect-square rounded-2xl border p-1 text-sm font-semibold transition hover:-translate-y-0.5 ${
+              className={`focus-ring relative aspect-square rounded-[5px] p-1 text-base font-bold transition hover:-translate-y-0.5 ${
                 isSelected
-                  ? "border-emerald-600 bg-emerald-700 text-white shadow-card dark:border-emerald-300 dark:bg-emerald-400 dark:text-slate-950"
-                  : "border-white/80 bg-white/70 text-slate-700 hover:bg-skysoft dark:border-white/10 dark:bg-slate-950/45 dark:text-slate-200 dark:hover:bg-slate-800"
+                  ? taskCount > 0
+                    ? "border-2 border-[#1f6129] bg-[#8fcf6a] text-[#123b18] shadow-pixel"
+                    : "border-2 border-[#9d6b24] bg-[#efc45d] text-[#241609] shadow-pixel"
+                  : taskCount > 0
+                    ? "bg-[#b9d68d] text-[#16461e] shadow-pixel hover:bg-[#9fcc74]"
+                    : "text-[#241609] hover:bg-[#f4da9b]"
               }`}
               aria-label={`${selectedDateFormatter.format(date)}${taskCount ? `, ${taskCount} tasks` : ""}`}
             >
               <span>{date.getDate()}</span>
-              {taskCount > 0 && (
-                <span
-                  className={`absolute bottom-2 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full ${
-                    isSelected ? "bg-white dark:bg-slate-950" : isComplete ? "bg-emerald-500" : "bg-sky-400"
-                  }`}
-                  aria-hidden="true"
-                />
-              )}
             </button>
           );
         })}

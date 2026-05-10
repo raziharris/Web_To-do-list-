@@ -1,35 +1,57 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-const characterStyles = {
-  lion: {
-    body: "rounded-[44%_56%_48%_52%/58%_55%_45%_42%] bg-amber-200 dark:bg-amber-300/80",
-    accent: "bg-orange-300 dark:bg-orange-300/80",
-    paw: "bg-amber-700/80 dark:bg-amber-100/90",
-    personality: { stepBoost: 0.92, bounce: 5, roll: 1 },
+const pixelCatSprites = {
+  walk: [
+    "/characters/indie-cat/walk-0.png",
+    "/characters/indie-cat/walk-1.png",
+    "/characters/indie-cat/walk-2.png",
+    "/characters/indie-cat/walk-3.png",
+  ],
+  idle: {
+    sit: "/characters/indie-cat/idle-0.png",
+    blink: "/characters/indie-cat/idle-1.png",
+    look: "/characters/indie-cat/idle-2.png",
+    yawn: "/characters/indie-cat/idle-3.png",
   },
-  cat: {
-    body: "rounded-[52%_48%_46%_54%/56%_55%_45%_44%] bg-orange-50 dark:bg-orange-100/90",
-    accent: "bg-rose-200 dark:bg-rose-200/90",
-    paw: "bg-slate-700/80 dark:bg-white/90",
-    personality: { stepBoost: 1.08, bounce: 3.5, roll: 1.4 },
-  },
-  hamster: {
-    body: "rounded-[58%_42%_54%_46%/52%_58%_42%_48%] bg-amber-100 dark:bg-amber-100/90",
-    accent: "bg-pink-200 dark:bg-pink-200/90",
-    paw: "bg-amber-800/75 dark:bg-amber-100/90",
-    personality: { stepBoost: 1.72, bounce: 7.5, roll: 3.2 },
+  react: {
+    surprised: "/characters/indie-cat/react-0.png",
+    excited: "/characters/indie-cat/react-1.png",
+    sleep: "/characters/indie-cat/react-2.png",
+    pounce: "/characters/indie-cat/react-3.png",
   },
 };
 
-const outlineStyles = {
-  soft: "border-white/90 shadow-[0_14px_34px_rgba(15,23,42,0.14)] dark:border-white/20",
-  bold: "border-slate-700 shadow-[0_12px_0_rgba(15,23,42,0.12),0_20px_38px_rgba(15,23,42,0.14)] dark:border-white",
-  sticker: "border-white shadow-[0_10px_0_rgba(15,23,42,0.1),0_22px_42px_rgba(15,23,42,0.16)]",
+const idleActions = ["sit", "blink", "look", "yawn", "sleep", "pounce", "tailWatch"];
+const walkFrameSequence = [0, 1, 1, 2, 3, 3, 2, 1];
+const emotionDuration = {
+  happy: 2200,
+  excited: 3000,
+  confused: 2200,
+  sleepy: 3600,
+  surprised: 1200,
 };
+
+function randomBetween(min, max) {
+  return min + Math.random() * (max - min);
+}
+
+function lerp(start, end, amount) {
+  return start + (end - start) * amount;
+}
 
 function WalkingCharacter({ settings, reactionId, lane = 0 }) {
   const [viewportWidth, setViewportWidth] = useState(() => (typeof window === "undefined" ? 1024 : window.innerWidth));
+  const [walkFrameStep, setWalkFrameStep] = useState(0);
+  const [emotion, setEmotion] = useState("neutral");
+  const [idleAction, setIdleAction] = useState("sit");
+  const [cursor, setCursor] = useState({ x: 0.5, near: false, fast: false });
+  const [attentionPulse, setAttentionPulse] = useState(0);
+  const [picturePopup, setPicturePopup] = useState(null);
+  const lastPointerRef = useRef({ x: 0, y: 0, time: Date.now() });
+  const emotionTimerRef = useRef(null);
+  const inactivityTimerRef = useRef(null);
+  const pictureTimerRef = useRef(null);
 
   useEffect(() => {
     function updateViewportWidth() {
@@ -41,37 +63,227 @@ function WalkingCharacter({ settings, reactionId, lane = 0 }) {
     return () => window.removeEventListener("resize", updateViewportWidth);
   }, []);
 
-  const responsiveScale = viewportWidth < 640 ? 0.78 : 1;
-  const characterSize = Math.min(settings.size * responsiveScale, Math.max(viewportWidth - 36, 56));
-  const edgePadding = viewportWidth < 640 ? 10 : 18;
+  const responsiveScale = viewportWidth < 640 ? 0.82 : 1;
+  const characterSize = Math.min(settings.size * responsiveScale * 1.55, Math.max(viewportWidth - 36, 72));
+  const edgePadding = viewportWidth < 640 ? 8 : 18;
   const leftEdge = edgePadding + lane * 12;
   const rightEdge = Math.max(leftEdge, viewportWidth - characterSize - edgePadding);
   const speedProgress = Math.min(Math.max(((settings.speed ?? 14) - 1) / 29, 0), 1);
   const walkDuration = 26 - speedProgress * 14;
-  const character = characterStyles[settings.characterType] || characterStyles.lion;
-  const stepDuration = (0.9 - speedProgress * 0.36) / character.personality.stepBoost;
-  const pauseDuration = (settings.pauseDuration ?? 0.8) * 0.55;
+  const stepDuration = 0.82 - speedProgress * 0.28;
+  const pauseDuration = (settings.pauseDuration ?? 0.8) * 0.72;
   const totalDuration = walkDuration + pauseDuration * 2;
   const pauseStep = pauseDuration / totalDuration;
-  const halfStep = 0.5;
   const timeline = useMemo(
-    () => ({
-      x: [leftEdge, leftEdge, rightEdge, rightEdge, leftEdge],
-      scaleX: [1, 1, 1, -1, -1, -1, 1],
-      times: [0, pauseStep, halfStep - pauseStep, halfStep, halfStep + pauseStep, 1 - pauseStep, 1],
-    }),
+    () => {
+      const outStart = pauseStep;
+      const outEnd = 0.5 - pauseStep;
+      const backStart = 0.5 + pauseStep;
+      const backEnd = 1 - pauseStep;
+      const outboundStride = [0.07, 0.15, 0.27, 0.34, 0.48, 0.56, 0.69, 0.77, 0.9, 0.96];
+      const returnStride = [0.93, 0.82, 0.72, 0.61, 0.5, 0.39, 0.28, 0.18, 0.09, 0.04];
+      const strideTimes = [0.07, 0.16, 0.25, 0.35, 0.46, 0.56, 0.67, 0.78, 0.9, 0.96];
+      const mapTime = (start, end, amount) => lerp(start, end, amount);
+
+      return {
+        x: [
+          leftEdge,
+          leftEdge,
+          ...outboundStride.map((amount, index) => lerp(leftEdge, rightEdge, amount) + (index % 2 === 0 ? -1.2 : 1.6)),
+          rightEdge,
+          rightEdge,
+          ...returnStride.map((amount, index) => lerp(leftEdge, rightEdge, amount) + (index % 2 === 0 ? 1.2 : -1.6)),
+          leftEdge,
+          leftEdge,
+        ],
+        xTimes: [
+          0,
+          outStart,
+          ...strideTimes.map((amount) => mapTime(outStart, outEnd, amount)),
+          0.5 - pauseStep * 0.18,
+          0.5 + pauseStep * 0.72,
+          ...strideTimes.map((amount) => mapTime(backStart, backEnd, amount)),
+          1 - pauseStep * 0.16,
+          1,
+        ],
+        scaleX: [1, 1, 1, 0.88, -1, -1, -1, -0.88, 1],
+        scaleTimes: [0, outStart, 0.5 - pauseStep * 0.55, 0.5 - pauseStep * 0.18, 0.5, backStart, 1 - pauseStep * 0.55, 1 - pauseStep * 0.18, 1],
+      };
+    },
     [leftEdge, pauseStep, rightEdge],
   );
-  const outlineClass = outlineStyles[settings.outline] || outlineStyles.soft;
-  const faceZoom = `${settings.faceZoom ?? 108}%`;
-  const faceShapeClass = settings.faceShape === "square" ? "rounded-[1.15rem]" : "rounded-full";
-  const walkingAreaHeight = Math.max(settings.walkingAreaHeight ?? 120, characterSize + 18 + lane * 12);
-  const idleAnimation = settings.idleAnimations !== false ? { y: [0, -3, 0] } : { y: 0 };
-  const imageFilter = `brightness(${settings.faceBrightness ?? 100}%)`;
+  const walkingAreaHeight = Math.max(settings.walkingAreaHeight ?? 120, characterSize * 0.72 + 22 + lane * 12);
+  const idleEnabled = settings.idleAnimations !== false;
+  const activeEmotion = emotion === "neutral" && cursor.near ? "confused" : emotion;
+
+  function showEmotion(nextEmotion, duration = emotionDuration[nextEmotion] ?? 1800) {
+    window.clearTimeout(emotionTimerRef.current);
+    setEmotion(nextEmotion);
+    emotionTimerRef.current = window.setTimeout(() => setEmotion("neutral"), duration);
+  }
+
+  function showPicturePopup() {
+    const images = settings.popupImages || [];
+
+    if (images.length === 0) {
+      return;
+    }
+
+    window.clearTimeout(pictureTimerRef.current);
+    setPicturePopup({
+      id: `${Date.now()}-${Math.random()}`,
+      src: images[Math.floor(Math.random() * images.length)],
+    });
+    pictureTimerRef.current = window.setTimeout(() => setPicturePopup(null), 2600);
+  }
+
+  function resetInactivity() {
+    window.clearTimeout(inactivityTimerRef.current);
+    inactivityTimerRef.current = window.setTimeout(() => {
+      setIdleAction("sleep");
+      showEmotion("sleepy", 4200);
+    }, 45000);
+  }
+
+  useEffect(() => () => {
+    window.clearTimeout(emotionTimerRef.current);
+    window.clearTimeout(inactivityTimerRef.current);
+    window.clearTimeout(pictureTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    if (!settings.walking) {
+      setWalkFrameStep(0);
+      return undefined;
+    }
+
+    let timeoutId;
+    let cancelled = false;
+
+    function queueNextStep(currentStep = walkFrameStep) {
+      const cadence = [1.18, 0.72, 0.86, 1.08, 0.78, 0.92, 1.14, 0.84];
+      const delay = Math.max(stepDuration * 245 * cadence[currentStep % cadence.length], 95);
+
+      timeoutId = window.setTimeout(() => {
+        if (cancelled) {
+          return;
+        }
+        const nextStep = (currentStep + 1) % walkFrameSequence.length;
+        setWalkFrameStep(nextStep);
+        queueNextStep(nextStep);
+      }, delay);
+    }
+
+    queueNextStep();
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [settings.walking, stepDuration]);
+
+  useEffect(() => {
+    if (!idleEnabled) {
+      return undefined;
+    }
+
+    let timeoutId;
+    let cancelled = false;
+
+    function scheduleIdle() {
+      timeoutId = window.setTimeout(() => {
+        if (cancelled) {
+          return;
+        }
+        const nextAction = idleActions[Math.floor(Math.random() * idleActions.length)];
+        setIdleAction(nextAction);
+
+        if (nextAction === "sleep") {
+          showEmotion("sleepy", 3400);
+        } else if (nextAction === "pounce" || nextAction === "tailWatch") {
+          showEmotion("confused", 2200);
+        }
+
+        window.setTimeout(() => {
+          if (!cancelled) {
+            setIdleAction("sit");
+            scheduleIdle();
+          }
+        }, randomBetween(1600, 3600));
+      }, randomBetween(2800, 8200));
+    }
+
+    scheduleIdle();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [idleEnabled]);
+
+  useEffect(() => {
+    function handlePointerMove(event) {
+      const now = Date.now();
+      const lastPointer = lastPointerRef.current;
+      const distance = Math.hypot(event.clientX - lastPointer.x, event.clientY - lastPointer.y);
+      const elapsed = Math.max(now - lastPointer.time, 16);
+      const speed = distance / elapsed;
+      const nearBottom = event.clientY > window.innerHeight - walkingAreaHeight - 80;
+
+      setCursor({
+        x: event.clientX / Math.max(window.innerWidth, 1),
+        near: nearBottom,
+        fast: speed > 2.2,
+      });
+
+      if (speed > 2.8) {
+        setIdleAction("pounce");
+        showEmotion("surprised", 900);
+        setAttentionPulse((value) => value + 1);
+      }
+
+      lastPointerRef.current = { x: event.clientX, y: event.clientY, time: now };
+      resetInactivity();
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    resetInactivity();
+    return () => window.removeEventListener("pointermove", handlePointerMove);
+  }, [walkingAreaHeight]);
+
+  useEffect(() => {
+    if (!reactionId) {
+      return;
+    }
+
+    setIdleAction("pounce");
+    showEmotion(Math.random() > 0.35 ? "excited" : "happy", 3200);
+    showPicturePopup();
+    setAttentionPulse((value) => value + 1);
+    const timeoutId = window.setTimeout(() => setIdleAction("sit"), 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [reactionId]);
 
   if (!settings.enabled) {
     return null;
   }
+
+  const spriteSrc = settings.walking
+    ? pixelCatSprites.walk[walkFrameSequence[walkFrameStep]]
+    : activeEmotion === "surprised"
+      ? pixelCatSprites.react.surprised
+      : activeEmotion === "excited" || activeEmotion === "happy"
+        ? pixelCatSprites.react.excited
+        : idleAction === "sleep" || activeEmotion === "sleepy"
+          ? pixelCatSprites.react.sleep
+          : idleAction === "pounce"
+            ? pixelCatSprites.react.pounce
+            : idleAction === "blink"
+              ? pixelCatSprites.idle.blink
+              : idleAction === "look" || idleAction === "tailWatch" || activeEmotion === "confused"
+                ? pixelCatSprites.idle.look
+                : idleAction === "yawn"
+                  ? pixelCatSprites.idle.yawn
+                  : pixelCatSprites.idle.sit;
 
   return (
     <div
@@ -79,173 +291,151 @@ function WalkingCharacter({ settings, reactionId, lane = 0 }) {
       style={{ height: walkingAreaHeight, bottom: 8 + lane * 18 }}
     >
       <motion.div
-        key={`walk-${settings.speed}-${settings.pauseDuration}-${characterSize}-${viewportWidth}`}
-        className="absolute bottom-1 will-change-transform"
+        key={`pixel-cat-walk-${settings.speed}-${settings.pauseDuration}-${characterSize}-${viewportWidth}`}
+        className="pointer-events-auto absolute bottom-1 will-change-transform"
         initial={{ x: leftEdge }}
         animate={settings.walking ? { x: timeline.x } : { x: leftEdge }}
         transition={
           settings.walking
-            ? { duration: totalDuration, times: [0, pauseStep, halfStep - pauseStep, halfStep, 1], ease: "easeInOut", repeat: Infinity }
+            ? { duration: totalDuration, times: timeline.xTimes, ease: "easeInOut", repeat: Infinity }
             : { duration: 0.45, ease: "easeOut" }
         }
       >
         <motion.div
           className="relative"
-          animate={settings.walking ? { scaleX: timeline.scaleX } : idleAnimation}
+          animate={
+            settings.walking
+              ? {
+                  scaleX: timeline.scaleX,
+                  y: [0, -0.5, -3.2, -1.1, 0, -2.4, -0.7, 0],
+                  rotate: [0, -0.45, 0.65, 0.25, -0.55, 0.35, 0],
+                }
+              : idleEnabled
+                ? { y: [0, -1, 0] }
+                : { y: 0 }
+          }
           transition={
             settings.walking
-              ? { duration: totalDuration, times: timeline.times, ease: "easeInOut", repeat: Infinity }
+              ? {
+                  scaleX: { duration: totalDuration, times: timeline.scaleTimes, ease: "easeInOut", repeat: Infinity },
+                  y: { duration: stepDuration * 2.05, ease: "easeInOut", repeat: Infinity },
+                  rotate: { duration: stepDuration * 2.05, ease: "easeInOut", repeat: Infinity },
+                }
               : { duration: 2, ease: "easeInOut", repeat: Infinity }
           }
-          style={{ width: characterSize, height: characterSize * 1.05 }}
+          style={{ width: characterSize, height: characterSize * 0.72 }}
+          onPointerEnter={() => showEmotion("confused", 1500)}
+          onPointerDown={() => {
+            setIdleAction("pounce");
+            showEmotion("happy", 2200);
+            showPicturePopup();
+            setAttentionPulse((value) => value + 1);
+          }}
         >
-          <motion.div
-            className={`absolute inset-x-[12%] bottom-[12%] h-[82%] overflow-hidden border-4 bg-white ${character.body} ${outlineClass} ${faceShapeClass}`}
+          <motion.span
+            className="absolute bottom-[4%] left-[18%] h-[11%] w-[64%] rounded-full bg-slate-950/18"
             animate={
               settings.walking
-                ? { y: [0, -character.personality.bounce, 0], rotate: [-character.personality.roll, character.personality.roll, -character.personality.roll] }
-                : { y: [0, -2, 0] }
+                ? { x: [0, 3, 1, -2, 0], scaleX: [1, 0.82, 0.95, 0.88, 1], opacity: [0.18, 0.09, 0.14, 0.1, 0.18] }
+                : idleEnabled
+                  ? { scaleX: [1, 0.96, 1], opacity: [0.16, 0.12, 0.16] }
+                  : { scaleX: 1, opacity: 0.14 }
             }
-            transition={{ duration: settings.walking ? stepDuration : 1.8, ease: "easeInOut", repeat: Infinity }}
-          >
-            <img
-              src={settings.faceImage}
-              alt=""
-              className="h-full w-full object-cover"
-              draggable="false"
-              style={{
-                width: faceZoom,
-                height: faceZoom,
-                maxWidth: "none",
-                objectPosition: `${settings.faceX}% ${settings.faceY}%`,
-                transform: `rotate(${settings.faceRotation ?? 0}deg)`,
-                filter: imageFilter,
-              }}
-            />
-            <div className="absolute inset-0 ring-2 ring-inset ring-white/55 dark:ring-white/15" />
-            {settings.characterType === "lion" && (
-              <>
-                <div className="absolute inset-[-11%] rounded-[48%_52%_50%_50%/55%_45%_55%_45%] border-[12px] border-orange-300/80 dark:border-orange-300/55" />
-                <div className="absolute inset-[6%] rounded-full border-4 border-amber-100/65" />
-              </>
-            )}
-            {settings.characterType === "hamster" && (
-              <>
-                <div className="absolute left-[8%] top-[48%] h-[18%] w-[22%] rounded-full bg-pink-200/85 blur-[1px]" />
-                <div className="absolute right-[8%] top-[48%] h-[18%] w-[22%] rounded-full bg-pink-200/85 blur-[1px]" />
-                <div className="absolute left-[28%] top-[64%] h-[8%] w-[10%] rounded-full bg-amber-300/70" />
-                <div className="absolute right-[28%] top-[64%] h-[8%] w-[10%] rounded-full bg-amber-300/70" />
-              </>
-            )}
-            <div className={`absolute -left-[18%] top-[48%] h-[17%] w-[24%] rounded-full ${character.accent} shadow-card`} />
-            <div className={`absolute -right-[18%] top-[48%] h-[17%] w-[24%] rounded-full ${character.accent} shadow-card`} />
-          </motion.div>
-
-          {settings.characterType === "cat" && (
-            <>
-              <motion.span
-                className={`absolute left-[20%] top-[2%] h-[22%] w-[18%] rotate-[-18deg] rounded-[75%_25%_70%_30%] border-2 border-white/80 ${character.body} shadow-card`}
-                animate={settings.walking || settings.idleAnimations !== false ? { rotate: [-24, -12, -24] } : { rotate: -18 }}
-                transition={{ duration: 1.2, ease: "easeInOut", repeat: Infinity }}
-              />
-              <motion.span
-                className={`absolute right-[20%] top-[2%] h-[22%] w-[18%] rotate-[18deg] rounded-[25%_75%_30%_70%] border-2 border-white/80 ${character.body} shadow-card`}
-                animate={settings.walking || settings.idleAnimations !== false ? { rotate: [24, 12, 24] } : { rotate: 18 }}
-                transition={{ duration: 1.2, ease: "easeInOut", repeat: Infinity }}
-              />
-              <span className="absolute left-[25%] top-[8%] h-[9%] w-[8%] rotate-[-18deg] rounded-full bg-rose-200/80" />
-              <span className="absolute right-[25%] top-[8%] h-[9%] w-[8%] rotate-[18deg] rounded-full bg-rose-200/80" />
-            </>
-          )}
-
-          {settings.characterType === "lion" && (
-            <>
-              <span className="absolute left-[17%] top-[7%] h-[16%] w-[16%] rounded-full bg-orange-300/85 shadow-card" />
-              <span className="absolute right-[17%] top-[7%] h-[16%] w-[16%] rounded-full bg-orange-300/85 shadow-card" />
-              <span className="absolute left-[34%] top-[-1%] h-[11%] w-[13%] rounded-full bg-orange-300/75 shadow-card" />
-              <span className="absolute right-[34%] top-[-1%] h-[11%] w-[13%] rounded-full bg-orange-300/75 shadow-card" />
-            </>
-          )}
-
-          {settings.characterType === "hamster" && (
-            <>
-              <span className="absolute left-[16%] top-[12%] h-[15%] w-[15%] rounded-full bg-amber-200 shadow-card" />
-              <span className="absolute right-[16%] top-[12%] h-[15%] w-[15%] rounded-full bg-amber-200 shadow-card" />
-              <span className="absolute left-[20%] top-[17%] h-[7%] w-[7%] rounded-full bg-pink-200" />
-              <span className="absolute right-[20%] top-[17%] h-[7%] w-[7%] rounded-full bg-pink-200" />
-            </>
-          )}
-
-          <motion.span
-            className={`absolute left-[2%] top-[42%] h-[30%] w-[13%] origin-top rounded-full border-2 border-white/80 ${character.accent} shadow-card dark:border-white/20`}
-            animate={settings.walking ? { rotate: [-18, 16, -18], y: [0, -2, 0] } : { rotate: -10 }}
-            transition={{ duration: stepDuration, ease: "easeInOut", repeat: Infinity }}
-          />
-          <motion.span
-            className={`absolute right-[2%] top-[42%] h-[30%] w-[13%] origin-top rounded-full border-2 border-white/80 ${character.accent} shadow-card dark:border-white/20`}
-            animate={settings.walking ? { rotate: [16, -18, 16], y: [-2, 0, -2] } : { rotate: 10 }}
-            transition={{ duration: stepDuration, ease: "easeInOut", repeat: Infinity }}
+            transition={{ duration: settings.walking ? stepDuration * 2.05 : 1.8, ease: "easeInOut", repeat: Infinity }}
           />
 
-          <motion.span
-            className={`absolute bottom-0 left-[24%] h-[12%] w-[20%] rounded-full ${character.paw}`}
-            animate={settings.walking ? { rotate: [20, -16, 20], x: [-2, 2, -2] } : { rotate: 4 }}
-            transition={{ duration: stepDuration, ease: "easeInOut", repeat: Infinity }}
-          />
-          <motion.span
-            className={`absolute bottom-0 right-[24%] h-[12%] w-[20%] rounded-full ${character.paw}`}
-            animate={settings.walking ? { rotate: [-16, 20, -16], x: [2, -2, 2] } : { rotate: -4 }}
-            transition={{ duration: stepDuration, ease: "easeInOut", repeat: Infinity }}
-          />
-
-          <motion.span
-            className={`absolute bottom-[32%] right-[-8%] h-[10%] w-[34%] origin-left rounded-full ${character.accent} shadow-card`}
+          <motion.img
+            src={spriteSrc}
+            alt=""
+            draggable="false"
+            className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_7px_0_rgba(15,23,42,0.10)]"
+            style={{ imageRendering: "pixelated", transformOrigin: "center bottom" }}
             animate={
-              settings.walking || settings.idleAnimations !== false
-                ? { rotate: settings.characterType === "lion" ? [12, -10, 12] : settings.characterType === "cat" ? [42, 10, 42] : [16, -18, 16] }
-                : { rotate: 12 }
+              settings.walking
+                ? {
+                    x: [0, 2.4, 0.8, -1.9, -0.5, 1.2, 0],
+                    y: [0, -3.6, -0.9, -2.8, -0.4, -1.4, 0],
+                    rotate: [-1.2, 1.55, 0.25, -1.45, -0.35, 0.9, -1.2],
+                    scaleX: [1.28, 1.3, 1.27, 1.305, 1.285, 1.295, 1.28],
+                    scaleY: [1.28, 1.255, 1.29, 1.26, 1.285, 1.27, 1.28],
+                  }
+                : idleEnabled
+                  ? {
+                      y: idleAction === "pounce" ? [0, -7, 0] : [0, -1, 0],
+                      x: cursor.near && cursor.fast ? (cursor.x > 0.5 ? -7 : 7) : 0,
+                      scale: idleAction === "sleep" ? 1.18 : 1.28,
+                    }
+                  : { y: 0, x: 0, scale: 1.28 }
             }
-            transition={{ duration: settings.characterType === "hamster" ? 0.6 : 1.1, ease: "easeInOut", repeat: Infinity }}
+            transition={{ duration: idleAction === "pounce" ? 0.75 : settings.walking ? stepDuration * 2.05 : 1.4, ease: "easeInOut", repeat: Infinity }}
           />
-          {settings.characterType === "lion" && (
-            <motion.span
-              className="absolute bottom-[37%] right-[-13%] h-[13%] w-[13%] rounded-full bg-orange-300 shadow-card"
-              animate={settings.walking ? { scale: [1, 1.15, 1] } : { scale: [1, 1.08, 1] }}
-              transition={{ duration: 1, ease: "easeInOut", repeat: Infinity }}
-            />
-          )}
+
+          <AnimatePresence>
+            {picturePopup && (
+              <motion.div
+                key={picturePopup.id}
+                className="pointer-events-none absolute left-[58%] top-[-58%] z-40"
+                initial={{ opacity: 0, scale: 0.55, y: 18 }}
+                animate={{ opacity: [0, 1, 1, 0], scale: [0.55, 1.08, 1, 0.96], y: [18, -6, -10, -18] }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={{ duration: 2.55, ease: "easeOut" }}
+              >
+                <span
+                  className="block overflow-hidden border-[3px] border-[#3d3028] bg-[#fff1c7] p-1 shadow-[6px_6px_0_rgba(61,48,40,0.18)]"
+                  style={{ width: characterSize * 0.82, height: characterSize * 0.66 }}
+                >
+                  <img src={picturePopup.src} alt="" className="h-full w-full object-cover" />
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {(activeEmotion !== "neutral" || idleAction !== "sit") && (
+              <motion.div
+                key={`${activeEmotion}-${idleAction}-${attentionPulse}`}
+                className="absolute left-[68%] top-[-16%] z-30"
+                initial={{ opacity: 0, scale: 0.55, y: 12 }}
+                animate={{ opacity: [0, 1, 1, 0], scale: [0.55, 1.18, 1.08, 0.98], y: [12, -10, -17, -28] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.8, ease: "easeOut" }}
+              >
+                <span
+                  className="grid place-items-center border-[3px] border-[#3d3028] bg-[#fff1c7] px-3 py-1.5 text-lg font-black leading-none text-[#8b4a25] shadow-[6px_6px_0_rgba(61,48,40,0.18)]"
+                  style={{ minHeight: characterSize * 0.22, minWidth: characterSize * 0.28 }}
+                >
+                  {activeEmotion === "sleepy" || idleAction === "sleep" ? "zzz" : idleAction === "pounce" || activeEmotion === "surprised" ? "!" : activeEmotion === "confused" ? "?" : "meow"}
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <AnimatePresence>
             {reactionId && (
               <motion.div
                 key={reactionId}
-                className="pointer-events-none absolute -inset-8"
-                initial={{ opacity: 0, scale: 0.55, y: 18 }}
-                animate={{
-                  opacity: [0, 1, 1, 0],
-                  scale: settings.characterType === "hamster" ? [0.75, 1.45, 1.05, 1.22] : [0.75, 1.34, 1.08, 1.18],
-                  rotate: settings.characterType === "hamster" ? [0, 24, -24, 10] : [0, -12, 12, 0],
-                  y: [18, -30, -8, -42],
-                }}
+                className="pointer-events-none absolute -inset-12"
+                initial={{ opacity: 0, scale: 0.45, y: 22 }}
+                animate={{ opacity: [0, 1, 1, 0], scale: [0.7, 1.32, 1.16, 1.2], y: [22, -34, -12, -50] }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 1.65, ease: "easeOut" }}
               >
                 {[0, 1, 2, 3, 4, 5, 6, 7].map((particle) => (
                   <motion.span
                     key={particle}
-                    className="absolute rounded-full bg-rose-300 shadow-[0_0_14px_rgba(251,113,133,0.65)]"
+                    className="absolute bg-amber-300 shadow-[3px_3px_0_rgba(139,74,37,0.22)]"
                     style={{
-                      height: characterSize * 0.11,
-                      width: characterSize * 0.11,
+                      height: characterSize * 0.08,
+                      width: characterSize * 0.08,
                       left: `${12 + particle * 10}%`,
-                      top: `${15 + (particle % 3) * 16}%`,
+                      top: `${16 + (particle % 3) * 15}%`,
                     }}
-                    animate={{ y: [-2, -52], x: [0, particle % 2 ? 28 : -28], opacity: [1, 0], scale: [0.7, 1.4, 0.3] }}
+                    animate={{ y: [-2, -62], x: [0, particle % 2 ? 34 : -34], opacity: [1, 0], scale: [0.75, 1.45, 0.3] }}
                     transition={{ duration: 1.45, ease: "easeOut" }}
                   />
                 ))}
-                <span className="absolute left-[25%] top-0 rounded-full border-2 border-white bg-white/95 px-4 py-2 text-sm font-black text-emerald-700 shadow-[0_12px_34px_rgba(15,23,42,0.18)]">
-                  {settings.characterType === "lion" ? "ROAR!" : settings.characterType === "cat" ? "YAY" : "WHEE"}
+                <span className="absolute left-[28%] top-[-6%] border-[3px] border-[#3d3028] bg-[#fff1c7] px-5 py-2 text-xl font-black leading-none text-[#8b4a25] shadow-[6px_6px_0_rgba(61,48,40,0.2)]">
+                  MEOW!
                 </span>
               </motion.div>
             )}

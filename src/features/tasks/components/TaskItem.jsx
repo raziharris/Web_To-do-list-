@@ -1,6 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarDays, Check, Pencil, Trash2, X } from "lucide-react";
+import { Check, Pencil, Trash2, X } from "lucide-react";
 import { useState } from "react";
+
+const taskDateFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
 
 function formatTaskDate(dateKey) {
   if (!dateKey) {
@@ -8,7 +14,7 @@ function formatTaskDate(dateKey) {
   }
 
   const [year, month, day] = dateKey.split("-").map(Number);
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(year, month - 1, day));
+  return taskDateFormatter.format(new Date(year, month - 1, day));
 }
 
 function TaskItem({ task, onToggle, onDelete, onEdit }) {
@@ -39,17 +45,17 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
       whileHover={!isEditing ? { y: -2 } : undefined}
       whileTap={!isEditing ? { scale: 0.985 } : undefined}
       onClick={toggleFromCard}
-      className={`soft-card group flex cursor-pointer items-center gap-3 p-4 transition hover:border-emerald-100 hover:bg-white/95 hover:shadow-soft dark:hover:border-emerald-300/20 dark:hover:bg-slate-900/95 ${
-        task.completed ? "bg-emerald-50/80 dark:bg-emerald-400/10" : ""
+      className={`pixel-row group flex cursor-pointer items-center gap-3 px-4 py-3 transition ${
+        task.completed ? "opacity-70" : ""
       }`}
     >
       <button
         type="button"
         onClick={() => onToggle(task.id)}
-        className={`focus-ring grid h-9 w-9 shrink-0 place-items-center rounded-xl border transition ${
+        className={`focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-[4px] border-2 transition ${
           task.completed
-            ? "scale-105 border-emerald-600 bg-emerald-600 text-white shadow-[0_8px_18px_rgba(5,150,105,0.22)] dark:border-emerald-400 dark:bg-emerald-400 dark:text-slate-950"
-            : "border-slate-300 bg-white text-transparent hover:border-emerald-600 group-hover:border-emerald-500 dark:border-slate-600 dark:bg-slate-950/60"
+            ? "border-[#8c6a35] bg-[#39834a] text-[#fff4c8]"
+            : "border-[#b88947] bg-[#fff7d8] text-transparent hover:bg-[#f2cf7c]"
         }`}
         aria-label={task.completed ? "Mark task active" : "Mark task completed"}
       >
@@ -70,15 +76,15 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onSubmit={saveEdit}
-              className="flex gap-2"
+            className="flex gap-2"
             >
               <input
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                className="focus-ring min-h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-base outline-none dark:border-white/10 dark:bg-slate-950 dark:text-slate-100"
+                className="focus-ring min-h-10 min-w-0 flex-1 border-2 border-[#b88947] bg-[#fff7d8] px-3 text-base outline-none"
                 autoFocus
               />
-              <button type="submit" className="focus-ring rounded-xl bg-sage px-3 text-sm font-semibold text-emerald-900 dark:bg-emerald-400 dark:text-slate-950">
+              <button type="submit" className="focus-ring bg-[#f0c05b] px-3 text-sm font-semibold text-[#42270f] shadow-pixel">
                 Save
               </button>
             </motion.form>
@@ -90,22 +96,22 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
               exit={{ opacity: 0 }}
             >
               <p
-                className={`break-words text-[15px] font-medium leading-7 transition duration-300 sm:text-base ${
+                className={`break-words text-[15px] font-bold leading-7 transition duration-300 sm:text-base ${
                   task.completed
-                    ? "text-slate-400 line-through decoration-emerald-500/70 decoration-2 dark:text-slate-500"
-                    : "text-slate-800 dark:text-slate-100"
+                    ? "text-[#94713f] line-through decoration-[#39834a] decoration-2"
+                    : "text-[#2d1b0b]"
                 }`}
               >
                 {task.title}
               </p>
-              <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-skysoft/70 px-2.5 py-1 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-                <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-                {formatTaskDate(task.dueDate)}
-              </span>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      <span className="hidden min-w-[112px] text-right text-sm font-bold text-[#8b6331] sm:inline-block">
+        {formatTaskDate(task.dueDate)}
+      </span>
 
       <div className="flex shrink-0 items-center gap-1">
         <button
@@ -114,7 +120,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
             setDraft(task.title);
             setIsEditing((current) => !current);
           }}
-          className="focus-ring grid h-9 w-9 place-items-center rounded-xl text-slate-400 transition hover:bg-skysoft hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white"
+          className="focus-ring grid h-8 w-8 place-items-center text-[#a3793d] transition hover:text-[#704414]"
           aria-label={isEditing ? "Cancel editing task" : "Edit task"}
         >
           {isEditing ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
@@ -122,7 +128,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
         <button
           type="button"
           onClick={() => onDelete(task.id)}
-          className="focus-ring grid h-9 w-9 place-items-center rounded-xl text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/12 dark:hover:text-rose-300"
+          className="focus-ring grid h-8 w-8 place-items-center text-[#a3793d] transition hover:text-[#9c271d]"
           aria-label="Delete task"
         >
           <Trash2 className="h-4 w-4" aria-hidden="true" />

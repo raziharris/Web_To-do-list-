@@ -1,1 +1,1 @@
-export const taskFilters = ["All", "Active", "Completed", "Calendar"];
+export const taskFilters = ["All", "Active", "Completed"];
