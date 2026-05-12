@@ -27,22 +27,20 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 
 Restart the dev server after changing env variables.
 
-When Supabase is configured, the app merges any tasks already saved in this browser into Supabase on first load. That keeps your existing list from disappearing when you move the same site to Netlify.
+When Supabase is configured, the app merges any tasks already saved in this browser into Supabase on first load. That keeps your existing list from disappearing when you move the same site to Vercel.
 
-## Deploy to Netlify
-
-The repo includes `netlify.toml`, so Netlify can build the Vite app automatically.
+## Deploy to Vercel
 
 The website opens behind a password gate. Visitors must know the shared website password before the task app loads.
 
-Use these environment variables in Netlify:
+Use these environment variables in Vercel:
 
 ```text
 VITE_SUPABASE_URL
 VITE_SUPABASE_ANON_KEY
 ```
 
-Add them in Netlify under **Site configuration > Environment variables**, then deploy. Without these variables, the app still works locally in the browser, but tasks will not sync through Supabase on the Netlify site.
+Add them in Vercel under **Project Settings > Environment Variables**, then deploy. Without these variables, the app can still use the built-in Supabase fallback, but keeping them in Vercel makes the production setup easier to change later.
 
 ## Files
 
@@ -91,8 +89,6 @@ git branch -M main
 git remote add origin YOUR_GITHUB_REPO_URL
 git push -u origin main
 ```
-
-## Deploy to Vercel
 
 Use these settings:
 
