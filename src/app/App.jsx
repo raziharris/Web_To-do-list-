@@ -434,12 +434,12 @@ function TodoApp() {
         />
       ))}
 
-      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-48px)] w-full max-w-[1250px] flex-col justify-center">
+      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-48px)] w-full max-w-[1250px] flex-col items-center justify-center">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: "easeOut" }}
-          className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,760px)_370px]"
+          className="grid w-full max-w-[430px] items-stretch gap-5 sm:max-w-[560px] lg:max-w-none lg:grid-cols-[minmax(0,760px)_370px]"
         >
           <section className="pixel-panel flex h-full flex-col p-4 sm:p-6" data-cat-zone="tasks">
             <header className="mb-5 flex items-center">
@@ -512,7 +512,7 @@ function TodoApp() {
             </div>
           </section>
 
-          <aside className="space-y-4">
+          <aside className="mx-auto w-full max-w-[430px] space-y-4 lg:max-w-none">
             <div className="pixel-profile flex items-center gap-3 p-3" data-cat-zone="profile">
               <div className="grid h-12 w-12 shrink-0 place-items-center bg-[#2f8b45] text-xs font-black leading-none text-[#fff7d8] shadow-pixel">
                 NEXT
