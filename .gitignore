@@ -20,3 +20,6 @@ dist/
 tmp-*.png
 vite-*.log
 .env.*.local
+
+# Local Netlify folder
+.netlify
