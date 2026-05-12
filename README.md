@@ -103,3 +103,7 @@ Output Directory: dist
 Install Command: npm install
 Root Directory: ./
 ```
+
+## Domain & Tunnel Notes
+
+For the polished domain, DNS, homelab, and Cloudflare Tunnel explanation, see [`docs/domain-and-tunnel-guide.md`](docs/domain-and-tunnel-guide.md).
