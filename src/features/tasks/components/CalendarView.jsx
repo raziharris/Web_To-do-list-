@@ -59,6 +59,7 @@ function CalendarView({ tasks, selectedDate, onSelectDate }) {
       exit={{ opacity: 0, y: -8 }}
       className="pixel-panel p-4 sm:p-5"
       aria-label="Task calendar"
+      data-cat-zone="calendar"
     >
       <div className="mb-5 flex items-center justify-between gap-3">
         <button
@@ -83,8 +84,8 @@ function CalendarView({ tasks, selectedDate, onSelectDate }) {
       </div>
 
       <div className="grid grid-cols-7 gap-2 text-center text-sm font-bold text-[#241609]">
-        {weekDays.map((day) => (
-          <span key={day}>{day}</span>
+        {weekDays.map((day, index) => (
+          <span key={`${day}-${index}`}>{day}</span>
         ))}
       </div>
 
@@ -105,16 +106,20 @@ function CalendarView({ tasks, selectedDate, onSelectDate }) {
               onClick={() => onSelectDate(dateKey)}
               className={`focus-ring relative aspect-square rounded-[5px] p-1 text-base font-bold transition hover:-translate-y-0.5 ${
                 isSelected
-                  ? taskCount > 0
-                    ? "border-2 border-[#1f6129] bg-[#8fcf6a] text-[#123b18] shadow-pixel"
-                    : "border-2 border-[#9d6b24] bg-[#efc45d] text-[#241609] shadow-pixel"
-                  : taskCount > 0
-                    ? "bg-[#b9d68d] text-[#16461e] shadow-pixel hover:bg-[#9fcc74]"
-                    : "text-[#241609] hover:bg-[#f4da9b]"
+                  ? "border-2 border-[#9d6b24] bg-[#efc45d] text-[#241609] shadow-pixel"
+                  : "text-[#241609] hover:bg-[#f4da9b]"
               }`}
               aria-label={`${selectedDateFormatter.format(date)}${taskCount ? `, ${taskCount} tasks` : ""}`}
             >
               <span>{date.getDate()}</span>
+              {taskCount > 0 && (
+                <span
+                  className={`absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full ${
+                    isSelected ? "bg-[#241609]" : "bg-[#2f8b45]"
+                  }`}
+                  aria-hidden="true"
+                />
+              )}
             </button>
           );
         })}

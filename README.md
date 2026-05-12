@@ -27,6 +27,23 @@ VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 
 Restart the dev server after changing env variables.
 
+When Supabase is configured, the app merges any tasks already saved in this browser into Supabase on first load. That keeps your existing list from disappearing when you move the same site to Netlify.
+
+## Deploy to Netlify
+
+The repo includes `netlify.toml`, so Netlify can build the Vite app automatically.
+
+The website opens behind a password gate. Visitors must know the shared website password before the task app loads.
+
+Use these environment variables in Netlify:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+```
+
+Add them in Netlify under **Site configuration > Environment variables**, then deploy. Without these variables, the app still works locally in the browser, but tasks will not sync through Supabase on the Netlify site.
+
 ## Files
 
 - `src/main.jsx` - starts the React app

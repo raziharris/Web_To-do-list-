@@ -5,3 +5,18 @@ dist/
 .codex-*.log
 .env
 .env.local
+
+# Codex local configuration
+.codex/
+.agents/
+
+# Claude Flow runtime data
+.claude-flow/data/
+.claude-flow/logs/
+
+# Environment variables
+.env
+.env.local
+tmp-*.png
+vite-*.log
+.env.*.local

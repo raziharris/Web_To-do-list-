@@ -1,5 +1,5 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 
 const pixelCatSprites = {
   walk: [
@@ -12,435 +12,356 @@ const pixelCatSprites = {
     sit: "/characters/indie-cat/idle-0.png",
     blink: "/characters/indie-cat/idle-1.png",
     look: "/characters/indie-cat/idle-2.png",
-    yawn: "/characters/indie-cat/idle-3.png",
+    stretch: "/characters/indie-cat/idle-3.png",
   },
   react: {
-    surprised: "/characters/indie-cat/react-0.png",
+    curious: "/characters/indie-cat/react-0.png",
     excited: "/characters/indie-cat/react-1.png",
     sleep: "/characters/indie-cat/react-2.png",
-    pounce: "/characters/indie-cat/react-3.png",
+    jump: "/characters/indie-cat/react-3.png",
   },
 };
 
-const idleActions = ["sit", "blink", "look", "yawn", "sleep", "pounce", "tailWatch"];
-const walkFrameSequence = [0, 1, 1, 2, 3, 3, 2, 1];
-const emotionDuration = {
-  happy: 2200,
-  excited: 3000,
-  confused: 2200,
-  sleepy: 3600,
-  surprised: 1200,
+const catProfiles = {
+  cuzi: {
+    name: "Cuzi",
+    tint: "saturate(1.12) contrast(1.04)",
+    accessory: "bandana",
+    home: 0.28,
+    yOffset: 10,
+    speed: 1.16,
+    idleDelay: [2800, 6200],
+    thoughtDelay: [13000, 23000],
+    walkDistance: [90, 260],
+    idleActions: ["look", "tailFlick", "stretch", "sit", "blink", "sleep"],
+    thoughts: [
+      "I can finish this faster than you.",
+      "Another task? Easy.",
+      "Let's speedrun today.",
+      "I saw that. Good job.",
+      "Work first, snacks later.",
+      "Wait... what was I doing?",
+      "This task looks beatable.",
+      "One more and we win.",
+      "I believe in us.",
+      "Tiny steps, big victory.",
+      "I'm not lazy, I'm charging.",
+      "Boss mode activated.",
+      "That task stood no chance.",
+      "Can I press the button?",
+      "Focus. Then chaos.",
+      "We are getting stronger.",
+      "Nice one, human.",
+      "I smell productivity.",
+      "Done means victory.",
+      "Okay, now I deserve a nap.",
+    ],
+    completionThoughts: ["YES! Task crushed!", "Done means victory!", "Nice one, human!", "Big happy cat energy!"],
+  },
+  cunim: {
+    name: "Cunim",
+    tint: "hue-rotate(338deg) saturate(0.92) brightness(1.08)",
+    accessory: "bow",
+    home: 0.66,
+    yOffset: 34,
+    speed: 0.86,
+    idleDelay: [3600, 7600],
+    thoughtDelay: [16000, 28000],
+    walkDistance: [55, 170],
+    idleActions: ["sit", "blink", "look", "stretch", "sleep", "tailFlick"],
+    thoughts: [
+      "Take it one task at a time.",
+      "You're doing fine.",
+      "Small progress still counts.",
+      "Let's keep today gentle.",
+      "Breathe first, then continue.",
+      "I'm proud of this little progress.",
+      "No rush, just steady steps.",
+      "This task can be simple.",
+      "You handled that well.",
+      "A calm mind works better.",
+      "Let's make the list lighter.",
+      "One completed task is already good.",
+      "Stay soft, stay focused.",
+      "We can do this slowly.",
+      "Your effort matters.",
+      "Rest is part of progress.",
+      "That was a lovely win.",
+      "Keep going, gently.",
+      "Today does not need to be perfect.",
+      "I'll stay here with you.",
+    ],
+    completionThoughts: ["That was a lovely win!", "You handled that so well!", "Small progress, big happy!", "I'm so proud of you!"],
+  },
 };
+
+const walkFrameSequence = [0, 1, 2, 3, 2, 1];
 
 function randomBetween(min, max) {
   return min + Math.random() * (max - min);
 }
 
-function lerp(start, end, amount) {
-  return start + (end - start) * amount;
+function pickRandom(items) {
+  return items[Math.floor(Math.random() * items.length)];
 }
 
-function WalkingCharacter({ settings, reactionId, lane = 0 }) {
-  const [viewportWidth, setViewportWidth] = useState(() => (typeof window === "undefined" ? 1024 : window.innerWidth));
-  const [walkFrameStep, setWalkFrameStep] = useState(0);
-  const [emotion, setEmotion] = useState("neutral");
+function WalkingCharacter({ profile = "cuzi", reactionId, lane = 0 }) {
+  const cat = catProfiles[profile] || catProfiles.cuzi;
+  const [viewport, setViewport] = useState(() => ({
+    width: typeof window === "undefined" ? 1024 : window.innerWidth,
+    height: typeof window === "undefined" ? 720 : window.innerHeight,
+  }));
+  const [walkFrame, setWalkFrame] = useState(0);
   const [idleAction, setIdleAction] = useState("sit");
-  const [cursor, setCursor] = useState({ x: 0.5, near: false, fast: false });
-  const [attentionPulse, setAttentionPulse] = useState(0);
-  const [picturePopup, setPicturePopup] = useState(null);
-  const lastPointerRef = useRef({ x: 0, y: 0, time: Date.now() });
-  const emotionTimerRef = useRef(null);
-  const inactivityTimerRef = useRef(null);
-  const pictureTimerRef = useRef(null);
+  const [isWalking, setIsWalking] = useState(false);
+  const [direction, setDirection] = useState(profile === "cunim" ? -1 : 1);
+  const [thought, setThought] = useState(null);
+  const [celebrating, setCelebrating] = useState(false);
+  const moveTimerRef = useRef(null);
+  const idleTimerRef = useRef(null);
+  const thoughtTimerRef = useRef(null);
+  const thoughtHideTimerRef = useRef(null);
+  const celebrationTimerRef = useRef(null);
+  const rawX = useMotionValue(0);
+  const smoothX = useSpring(rawX, { stiffness: cat.speed > 1 ? 62 : 42, damping: cat.speed > 1 ? 18 : 24, mass: 0.85 });
 
-  useEffect(() => {
-    function updateViewportWidth() {
-      setViewportWidth(window.innerWidth);
-    }
+  const responsiveScale = viewport.width < 640 ? 0.68 : 0.78;
+  const size = Math.min(76 * responsiveScale, Math.max(viewport.width - 48, 52));
+  const leftEdge = 18 + lane * 8;
+  const rightEdge = Math.max(leftEdge, viewport.width - size - 22 - lane * 8);
+  const gardenHeight = Math.max(230, viewport.height * 0.32);
+  const y = Math.min(gardenHeight - size * 0.76 - 18, 58 + cat.yOffset);
+  const stepDuration = profile === "cuzi" ? 0.44 : 0.68;
+  const spriteSrc = isWalking
+    ? pixelCatSprites.walk[walkFrameSequence[walkFrame]]
+    : celebrating
+      ? pixelCatSprites.react.excited
+      : idleAction === "sleep"
+        ? pixelCatSprites.react.sleep
+        : idleAction === "stretch"
+          ? pixelCatSprites.idle.stretch
+          : idleAction === "blink"
+            ? pixelCatSprites.idle.blink
+            : idleAction === "look" || idleAction === "tailFlick"
+              ? pixelCatSprites.idle.look
+              : pixelCatSprites.idle.sit;
 
-    updateViewportWidth();
-    window.addEventListener("resize", updateViewportWidth);
-    return () => window.removeEventListener("resize", updateViewportWidth);
-  }, []);
-
-  const responsiveScale = viewportWidth < 640 ? 0.82 : 1;
-  const characterSize = Math.min(settings.size * responsiveScale * 1.55, Math.max(viewportWidth - 36, 72));
-  const edgePadding = viewportWidth < 640 ? 8 : 18;
-  const leftEdge = edgePadding + lane * 12;
-  const rightEdge = Math.max(leftEdge, viewportWidth - characterSize - edgePadding);
-  const speedProgress = Math.min(Math.max(((settings.speed ?? 14) - 1) / 29, 0), 1);
-  const walkDuration = 26 - speedProgress * 14;
-  const stepDuration = 0.82 - speedProgress * 0.28;
-  const pauseDuration = (settings.pauseDuration ?? 0.8) * 0.72;
-  const totalDuration = walkDuration + pauseDuration * 2;
-  const pauseStep = pauseDuration / totalDuration;
-  const timeline = useMemo(
-    () => {
-      const outStart = pauseStep;
-      const outEnd = 0.5 - pauseStep;
-      const backStart = 0.5 + pauseStep;
-      const backEnd = 1 - pauseStep;
-      const outboundStride = [0.07, 0.15, 0.27, 0.34, 0.48, 0.56, 0.69, 0.77, 0.9, 0.96];
-      const returnStride = [0.93, 0.82, 0.72, 0.61, 0.5, 0.39, 0.28, 0.18, 0.09, 0.04];
-      const strideTimes = [0.07, 0.16, 0.25, 0.35, 0.46, 0.56, 0.67, 0.78, 0.9, 0.96];
-      const mapTime = (start, end, amount) => lerp(start, end, amount);
-
-      return {
-        x: [
-          leftEdge,
-          leftEdge,
-          ...outboundStride.map((amount, index) => lerp(leftEdge, rightEdge, amount) + (index % 2 === 0 ? -1.2 : 1.6)),
-          rightEdge,
-          rightEdge,
-          ...returnStride.map((amount, index) => lerp(leftEdge, rightEdge, amount) + (index % 2 === 0 ? 1.2 : -1.6)),
-          leftEdge,
-          leftEdge,
-        ],
-        xTimes: [
-          0,
-          outStart,
-          ...strideTimes.map((amount) => mapTime(outStart, outEnd, amount)),
-          0.5 - pauseStep * 0.18,
-          0.5 + pauseStep * 0.72,
-          ...strideTimes.map((amount) => mapTime(backStart, backEnd, amount)),
-          1 - pauseStep * 0.16,
-          1,
-        ],
-        scaleX: [1, 1, 1, 0.88, -1, -1, -1, -0.88, 1],
-        scaleTimes: [0, outStart, 0.5 - pauseStep * 0.55, 0.5 - pauseStep * 0.18, 0.5, backStart, 1 - pauseStep * 0.55, 1 - pauseStep * 0.18, 1],
-      };
-    },
-    [leftEdge, pauseStep, rightEdge],
-  );
-  const walkingAreaHeight = Math.max(settings.walkingAreaHeight ?? 120, characterSize * 0.72 + 22 + lane * 12);
-  const idleEnabled = settings.idleAnimations !== false;
-  const activeEmotion = emotion === "neutral" && cursor.near ? "confused" : emotion;
-
-  function showEmotion(nextEmotion, duration = emotionDuration[nextEmotion] ?? 1800) {
-    window.clearTimeout(emotionTimerRef.current);
-    setEmotion(nextEmotion);
-    emotionTimerRef.current = window.setTimeout(() => setEmotion("neutral"), duration);
+  function showThought(message) {
+    window.clearTimeout(thoughtHideTimerRef.current);
+    setThought({ id: `${profile}-${Date.now()}-${Math.random()}`, text: message || pickRandom(cat.thoughts) });
+    thoughtHideTimerRef.current = window.setTimeout(() => setThought(null), 4200);
   }
 
-  function showPicturePopup() {
-    const images = settings.popupImages || [];
-
-    if (images.length === 0) {
-      return;
-    }
-
-    window.clearTimeout(pictureTimerRef.current);
-    setPicturePopup({
-      id: `${Date.now()}-${Math.random()}`,
-      src: images[Math.floor(Math.random() * images.length)],
-    });
-    pictureTimerRef.current = window.setTimeout(() => setPicturePopup(null), 2600);
+  function scheduleThought() {
+    window.clearTimeout(thoughtTimerRef.current);
+    thoughtTimerRef.current = window.setTimeout(() => {
+      showThought();
+      scheduleThought();
+    }, randomBetween(cat.thoughtDelay[0], cat.thoughtDelay[1]));
   }
 
-  function resetInactivity() {
-    window.clearTimeout(inactivityTimerRef.current);
-    inactivityTimerRef.current = window.setTimeout(() => {
-      setIdleAction("sleep");
-      showEmotion("sleepy", 4200);
-    }, 45000);
-  }
-
-  useEffect(() => () => {
-    window.clearTimeout(emotionTimerRef.current);
-    window.clearTimeout(inactivityTimerRef.current);
-    window.clearTimeout(pictureTimerRef.current);
-  }, []);
-
-  useEffect(() => {
-    if (!settings.walking) {
-      setWalkFrameStep(0);
-      return undefined;
-    }
-
-    let timeoutId;
-    let cancelled = false;
-
-    function queueNextStep(currentStep = walkFrameStep) {
-      const cadence = [1.18, 0.72, 0.86, 1.08, 0.78, 0.92, 1.14, 0.84];
-      const delay = Math.max(stepDuration * 245 * cadence[currentStep % cadence.length], 95);
-
-      timeoutId = window.setTimeout(() => {
-        if (cancelled) {
-          return;
-        }
-        const nextStep = (currentStep + 1) % walkFrameSequence.length;
-        setWalkFrameStep(nextStep);
-        queueNextStep(nextStep);
-      }, delay);
-    }
-
-    queueNextStep();
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  }, [settings.walking, stepDuration]);
-
-  useEffect(() => {
-    if (!idleEnabled) {
-      return undefined;
-    }
-
-    let timeoutId;
-    let cancelled = false;
-
-    function scheduleIdle() {
-      timeoutId = window.setTimeout(() => {
-        if (cancelled) {
-          return;
-        }
-        const nextAction = idleActions[Math.floor(Math.random() * idleActions.length)];
-        setIdleAction(nextAction);
-
-        if (nextAction === "sleep") {
-          showEmotion("sleepy", 3400);
-        } else if (nextAction === "pounce" || nextAction === "tailWatch") {
-          showEmotion("confused", 2200);
-        }
-
-        window.setTimeout(() => {
-          if (!cancelled) {
-            setIdleAction("sit");
-            scheduleIdle();
-          }
-        }, randomBetween(1600, 3600));
-      }, randomBetween(2800, 8200));
-    }
-
-    scheduleIdle();
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  }, [idleEnabled]);
-
-  useEffect(() => {
-    function handlePointerMove(event) {
-      const now = Date.now();
-      const lastPointer = lastPointerRef.current;
-      const distance = Math.hypot(event.clientX - lastPointer.x, event.clientY - lastPointer.y);
-      const elapsed = Math.max(now - lastPointer.time, 16);
-      const speed = distance / elapsed;
-      const nearBottom = event.clientY > window.innerHeight - walkingAreaHeight - 80;
-
-      setCursor({
-        x: event.clientX / Math.max(window.innerWidth, 1),
-        near: nearBottom,
-        fast: speed > 2.2,
-      });
-
-      if (speed > 2.8) {
-        setIdleAction("pounce");
-        showEmotion("surprised", 900);
-        setAttentionPulse((value) => value + 1);
+  function scheduleIdle() {
+    window.clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = window.setTimeout(() => {
+      if (!isWalking && !celebrating) {
+        setIdleAction(pickRandom(cat.idleActions));
       }
+      scheduleIdle();
+    }, randomBetween(cat.idleDelay[0], cat.idleDelay[1]));
+  }
 
-      lastPointerRef.current = { x: event.clientX, y: event.clientY, time: now };
-      resetInactivity();
+  function scheduleWalk(fromX = rawX.get()) {
+    window.clearTimeout(moveTimerRef.current);
+    const delay = randomBetween(profile === "cuzi" ? 700 : 1600, profile === "cuzi" ? 1900 : 3400);
+
+    moveTimerRef.current = window.setTimeout(() => {
+      const distance = randomBetween(cat.walkDistance[0], cat.walkDistance[1]);
+      const nearLeft = fromX < leftEdge + 80;
+      const nearRight = fromX > rightEdge - 80;
+      const nextDirection = nearLeft ? 1 : nearRight ? -1 : Math.random() > 0.5 ? 1 : -1;
+      const target = Math.min(rightEdge, Math.max(leftEdge, fromX + nextDirection * distance));
+      const duration = Math.max(900, (Math.abs(target - fromX) / (cat.speed > 1 ? 150 : 95)) * 1000);
+
+      setDirection(nextDirection);
+      setIsWalking(true);
+      setIdleAction("sit");
+      rawX.set(target);
+
+      window.clearTimeout(moveTimerRef.current);
+      moveTimerRef.current = window.setTimeout(() => {
+        setIsWalking(false);
+        setIdleAction(profile === "cuzi" && Math.random() > 0.55 ? "tailFlick" : "sit");
+        scheduleWalk(target);
+      }, duration);
+    }, delay);
+  }
+
+  useEffect(() => {
+    function handleResize() {
+      setViewport({ width: window.innerWidth, height: window.innerHeight });
     }
 
-    window.addEventListener("pointermove", handlePointerMove);
-    resetInactivity();
-    return () => window.removeEventListener("pointermove", handlePointerMove);
-  }, [walkingAreaHeight]);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    const startX = Math.min(rightEdge, Math.max(leftEdge, viewport.width * cat.home - size / 2));
+    rawX.set(startX);
+    scheduleWalk(startX);
+    scheduleIdle();
+    scheduleThought();
+
+    return () => {
+      window.clearTimeout(moveTimerRef.current);
+      window.clearTimeout(idleTimerRef.current);
+      window.clearTimeout(thoughtTimerRef.current);
+      window.clearTimeout(thoughtHideTimerRef.current);
+      window.clearTimeout(celebrationTimerRef.current);
+    };
+  }, [leftEdge, rightEdge, viewport.width, cat.home]);
+
+  useEffect(() => {
+    if (!isWalking) {
+      setWalkFrame(0);
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setWalkFrame((frame) => (frame + 1) % walkFrameSequence.length);
+    }, stepDuration * 180);
+
+    return () => window.clearInterval(intervalId);
+  }, [isWalking, stepDuration]);
 
   useEffect(() => {
     if (!reactionId) {
       return;
     }
 
-    setIdleAction("pounce");
-    showEmotion(Math.random() > 0.35 ? "excited" : "happy", 3200);
-    showPicturePopup();
-    setAttentionPulse((value) => value + 1);
-    const timeoutId = window.setTimeout(() => setIdleAction("sit"), 3000);
-    return () => window.clearTimeout(timeoutId);
+    setCelebrating(true);
+    setIsWalking(false);
+    setIdleAction("tailFlick");
+    showThought(pickRandom(cat.completionThoughts));
+    window.clearTimeout(celebrationTimerRef.current);
+    celebrationTimerRef.current = window.setTimeout(() => setCelebrating(false), profile === "cuzi" ? 2800 : 3100);
   }, [reactionId]);
 
-  if (!settings.enabled) {
-    return null;
-  }
-
-  const spriteSrc = settings.walking
-    ? pixelCatSprites.walk[walkFrameSequence[walkFrameStep]]
-    : activeEmotion === "surprised"
-      ? pixelCatSprites.react.surprised
-      : activeEmotion === "excited" || activeEmotion === "happy"
-        ? pixelCatSprites.react.excited
-        : idleAction === "sleep" || activeEmotion === "sleepy"
-          ? pixelCatSprites.react.sleep
-          : idleAction === "pounce"
-            ? pixelCatSprites.react.pounce
-            : idleAction === "blink"
-              ? pixelCatSprites.idle.blink
-              : idleAction === "look" || idleAction === "tailWatch" || activeEmotion === "confused"
-                ? pixelCatSprites.idle.look
-                : idleAction === "yawn"
-                  ? pixelCatSprites.idle.yawn
-                  : pixelCatSprites.idle.sit;
-
   return (
-    <div
-      className="pointer-events-none fixed inset-x-0 bottom-2 z-[70] overflow-visible sm:bottom-4"
-      style={{ height: walkingAreaHeight, bottom: 8 + lane * 18 }}
-    >
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] h-[45vh] min-h-[230px] overflow-visible">
       <motion.div
-        key={`pixel-cat-walk-${settings.speed}-${settings.pauseDuration}-${characterSize}-${viewportWidth}`}
-        className="pointer-events-auto absolute bottom-1 will-change-transform"
-        initial={{ x: leftEdge }}
-        animate={settings.walking ? { x: timeline.x } : { x: leftEdge }}
-        transition={
-          settings.walking
-            ? { duration: totalDuration, times: timeline.xTimes, ease: "easeInOut", repeat: Infinity }
-            : { duration: 0.45, ease: "easeOut" }
-        }
+        className="pointer-events-auto absolute left-0 top-0 will-change-transform"
+        style={{ x: smoothX, y }}
+        onPointerDown={() => showThought()}
       >
         <motion.div
           className="relative"
           animate={
-            settings.walking
+            celebrating
               ? {
-                  scaleX: timeline.scaleX,
-                  y: [0, -0.5, -3.2, -1.1, 0, -2.4, -0.7, 0],
-                  rotate: [0, -0.45, 0.65, 0.25, -0.55, 0.35, 0],
+                  y: profile === "cuzi" ? [0, -38, 0, -24, 0, -10, 0] : [0, -30, 0, -16, 0],
+                  rotate: profile === "cuzi" ? [0, -14, 13, -7, 0] : [0, 10, -8, 0],
+                  scale: profile === "cuzi" ? [1, 1.42, 1.18, 1.32, 1] : [1, 1.34, 1.12, 1.24, 1],
                 }
-              : idleEnabled
-                ? { y: [0, -1, 0] }
-                : { y: 0 }
+              : isWalking
+                ? { y: profile === "cuzi" ? [0, -3, 0, -5, 0] : [0, -1.5, 0], rotate: profile === "cuzi" ? [-1.4, 1.4, -1.4] : [-0.45, 0.45, -0.45] }
+                : idleAction === "stretch"
+                  ? { y: [0, 3, 0], scaleY: [1, 0.92, 1] }
+                  : idleAction === "tailFlick"
+                    ? { rotate: [0, 0.8, -0.8, 0] }
+                    : idleAction === "sleep"
+                      ? { y: [0, 1.5, 0] }
+                      : { y: [0, -0.6, 0] }
           }
-          transition={
-            settings.walking
-              ? {
-                  scaleX: { duration: totalDuration, times: timeline.scaleTimes, ease: "easeInOut", repeat: Infinity },
-                  y: { duration: stepDuration * 2.05, ease: "easeInOut", repeat: Infinity },
-                  rotate: { duration: stepDuration * 2.05, ease: "easeInOut", repeat: Infinity },
-                }
-              : { duration: 2, ease: "easeInOut", repeat: Infinity }
-          }
-          style={{ width: characterSize, height: characterSize * 0.72 }}
-          onPointerEnter={() => showEmotion("confused", 1500)}
-          onPointerDown={() => {
-            setIdleAction("pounce");
-            showEmotion("happy", 2200);
-            showPicturePopup();
-            setAttentionPulse((value) => value + 1);
-          }}
+          transition={{ duration: celebrating ? 1.25 : isWalking ? stepDuration : 1.7, ease: "easeInOut", repeat: isWalking || !celebrating ? Infinity : 0 }}
+          style={{ width: size, height: size * 0.72 }}
+          aria-label={`${cat.name} cat companion`}
+          role="img"
         >
           <motion.span
-            className="absolute bottom-[4%] left-[18%] h-[11%] w-[64%] rounded-full bg-slate-950/18"
-            animate={
-              settings.walking
-                ? { x: [0, 3, 1, -2, 0], scaleX: [1, 0.82, 0.95, 0.88, 1], opacity: [0.18, 0.09, 0.14, 0.1, 0.18] }
-                : idleEnabled
-                  ? { scaleX: [1, 0.96, 1], opacity: [0.16, 0.12, 0.16] }
-                  : { scaleX: 1, opacity: 0.14 }
-            }
-            transition={{ duration: settings.walking ? stepDuration * 2.05 : 1.8, ease: "easeInOut", repeat: Infinity }}
+            className="absolute bottom-[2%] left-[19%] h-[10%] w-[62%] rounded-full bg-slate-950/18"
+            animate={isWalking ? { scaleX: [1, 0.9, 1], opacity: [0.17, 0.1, 0.17] } : { scaleX: [1, 0.96, 1], opacity: [0.14, 0.1, 0.14] }}
+            transition={{ duration: isWalking ? stepDuration : 1.8, ease: "easeInOut", repeat: Infinity }}
           />
 
-          <motion.img
+          <img
             src={spriteSrc}
             alt=""
             draggable="false"
-            className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_7px_0_rgba(15,23,42,0.10)]"
-            style={{ imageRendering: "pixelated", transformOrigin: "center bottom" }}
-            animate={
-              settings.walking
-                ? {
-                    x: [0, 2.4, 0.8, -1.9, -0.5, 1.2, 0],
-                    y: [0, -3.6, -0.9, -2.8, -0.4, -1.4, 0],
-                    rotate: [-1.2, 1.55, 0.25, -1.45, -0.35, 0.9, -1.2],
-                    scaleX: [1.28, 1.3, 1.27, 1.305, 1.285, 1.295, 1.28],
-                    scaleY: [1.28, 1.255, 1.29, 1.26, 1.285, 1.27, 1.28],
-                  }
-                : idleEnabled
-                  ? {
-                      y: idleAction === "pounce" ? [0, -7, 0] : [0, -1, 0],
-                      x: cursor.near && cursor.fast ? (cursor.x > 0.5 ? -7 : 7) : 0,
-                      scale: idleAction === "sleep" ? 1.18 : 1.28,
-                    }
-                  : { y: 0, x: 0, scale: 1.28 }
-            }
-            transition={{ duration: idleAction === "pounce" ? 0.75 : settings.walking ? stepDuration * 2.05 : 1.4, ease: "easeInOut", repeat: Infinity }}
+            className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_5px_0_rgba(15,23,42,0.10)]"
+            style={{ imageRendering: "pixelated", filter: cat.tint, transform: `scaleX(${direction}) scale(${celebrating ? 1.34 : 1.22})`, transformOrigin: "center bottom" }}
           />
 
-          <AnimatePresence>
-            {picturePopup && (
-              <motion.div
-                key={picturePopup.id}
-                className="pointer-events-none absolute left-[58%] top-[-58%] z-40"
-                initial={{ opacity: 0, scale: 0.55, y: 18 }}
-                animate={{ opacity: [0, 1, 1, 0], scale: [0.55, 1.08, 1, 0.96], y: [18, -6, -10, -18] }}
-                exit={{ opacity: 0, scale: 0.85 }}
-                transition={{ duration: 2.55, ease: "easeOut" }}
-              >
-                <span
-                  className="block overflow-hidden border-[3px] border-[#3d3028] bg-[#fff1c7] p-1 shadow-[6px_6px_0_rgba(61,48,40,0.18)]"
-                  style={{ width: characterSize * 0.82, height: characterSize * 0.66 }}
-                >
-                  <img src={picturePopup.src} alt="" className="h-full w-full object-cover" />
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {cat.accessory === "bow" && (
+            <span className="absolute left-[56%] top-[4%] h-[12%] w-[22%] rotate-12">
+              <span className="absolute left-0 top-[18%] h-[64%] w-[44%] bg-pink-300 shadow-[2px_2px_0_rgba(61,48,40,0.22)]" />
+              <span className="absolute right-0 top-[18%] h-[64%] w-[44%] bg-pink-300 shadow-[2px_2px_0_rgba(61,48,40,0.22)]" />
+              <span className="absolute left-[40%] top-[32%] h-[36%] w-[20%] bg-pink-500" />
+            </span>
+          )}
+
+          {cat.accessory === "bandana" && (
+            <span className="absolute left-[43%] top-[58%] h-[10%] w-[22%] bg-sky-500 shadow-[2px_2px_0_rgba(61,48,40,0.22)]" />
+          )}
+
+          <span className="absolute left-[22%] top-[82%] border-2 border-[#3d3028] bg-[#fff1c7] px-2 py-0.5 text-[10px] font-black leading-none text-[#8b4a25] shadow-[3px_3px_0_rgba(61,48,40,0.18)]">
+            {cat.name}
+          </span>
 
           <AnimatePresence>
-            {(activeEmotion !== "neutral" || idleAction !== "sit") && (
+            {celebrating && (
               <motion.div
-                key={`${activeEmotion}-${idleAction}-${attentionPulse}`}
-                className="absolute left-[68%] top-[-16%] z-30"
-                initial={{ opacity: 0, scale: 0.55, y: 12 }}
-                animate={{ opacity: [0, 1, 1, 0], scale: [0.55, 1.18, 1.08, 0.98], y: [12, -10, -17, -28] }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 1.8, ease: "easeOut" }}
-              >
-                <span
-                  className="grid place-items-center border-[3px] border-[#3d3028] bg-[#fff1c7] px-3 py-1.5 text-lg font-black leading-none text-[#8b4a25] shadow-[6px_6px_0_rgba(61,48,40,0.18)]"
-                  style={{ minHeight: characterSize * 0.22, minWidth: characterSize * 0.28 }}
-                >
-                  {activeEmotion === "sleepy" || idleAction === "sleep" ? "zzz" : idleAction === "pounce" || activeEmotion === "surprised" ? "!" : activeEmotion === "confused" ? "?" : "meow"}
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {reactionId && (
-              <motion.div
-                key={reactionId}
                 className="pointer-events-none absolute -inset-12"
-                initial={{ opacity: 0, scale: 0.45, y: 22 }}
-                animate={{ opacity: [0, 1, 1, 0], scale: [0.7, 1.32, 1.16, 1.2], y: [22, -34, -12, -50] }}
+                initial={{ opacity: 0, scale: 0.42, rotate: -10 }}
+                animate={{ opacity: [0, 1, 1, 0], scale: [0.42, 1.36, 1.1, 1.62], rotate: [-10, 8, -4, 0] }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 1.65, ease: "easeOut" }}
+                transition={{ duration: 2.25, ease: "easeOut" }}
               >
-                {[0, 1, 2, 3, 4, 5, 6, 7].map((particle) => (
+                <motion.span
+                  className="absolute left-[17%] top-[18%] h-[68%] w-[68%] rounded-full border-4 border-[#f6c247]/70"
+                  animate={{ opacity: [0.9, 0], scale: [0.55, 1.55] }}
+                  transition={{ duration: 1.05, ease: "easeOut", repeat: 1, repeatDelay: 0.18 }}
+                />
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((heart) => (
                   <motion.span
-                    key={particle}
-                    className="absolute bg-amber-300 shadow-[3px_3px_0_rgba(139,74,37,0.22)]"
-                    style={{
-                      height: characterSize * 0.08,
-                      width: characterSize * 0.08,
-                      left: `${12 + particle * 10}%`,
-                      top: `${16 + (particle % 3) * 15}%`,
+                    key={heart}
+                    className={`absolute font-black ${heart % 3 === 0 ? "text-2xl text-[#f6c247]" : "text-xl text-pink-500"}`}
+                    style={{ left: `${10 + heart * 9}%`, top: `${6 + (heart % 3) * 18}%` }}
+                    animate={{
+                      y: [-4, -72 - (heart % 3) * 10],
+                      x: [0, heart % 2 ? 34 : -34],
+                      opacity: [0, 1, 1, 0],
+                      scale: [0.45, 1.75, 1.1, 0.35],
+                      rotate: [0, heart % 2 ? 24 : -24],
                     }}
-                    animate={{ y: [-2, -62], x: [0, particle % 2 ? 34 : -34], opacity: [1, 0], scale: [0.75, 1.45, 0.3] }}
-                    transition={{ duration: 1.45, ease: "easeOut" }}
-                  />
+                    transition={{ duration: 1.75, ease: "easeOut", delay: heart * 0.035 }}
+                  >
+                    {heart % 3 === 0 ? "*" : "\u2665"}
+                  </motion.span>
                 ))}
-                <span className="absolute left-[28%] top-[-6%] border-[3px] border-[#3d3028] bg-[#fff1c7] px-5 py-2 text-xl font-black leading-none text-[#8b4a25] shadow-[6px_6px_0_rgba(61,48,40,0.2)]">
-                  MEOW!
-                </span>
               </motion.div>
             )}
           </AnimatePresence>
         </motion.div>
+
+        <AnimatePresence>
+          {thought && (
+            <motion.div
+              key={thought.id}
+              className="pointer-events-none absolute bottom-[72%] left-[48%] z-50"
+              initial={{ opacity: 0, scale: 0.72, y: 10 }}
+              animate={{ opacity: [0, 1, 1, 0], scale: [0.72, 1.03, 1, 0.96], y: [10, -2, -5, -12] }}
+              exit={{ opacity: 0, scale: 0.86 }}
+              transition={{ duration: 3.8, ease: "easeOut" }}
+            >
+              <span className="block w-max max-w-[190px] border-[3px] border-[#3d3028] bg-[#fff1c7] px-3 py-2 text-left text-sm font-black leading-tight text-[#8b4a25] shadow-[5px_5px_0_rgba(61,48,40,0.18)] [direction:ltr]">
+                {thought.text}
+              </span>
+              <span className="absolute -bottom-2 left-5 h-4 w-4 rotate-45 border-b-[3px] border-r-[3px] border-[#3d3028] bg-[#fff1c7]" />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );

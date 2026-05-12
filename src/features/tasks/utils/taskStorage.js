@@ -13,21 +13,54 @@ export function createDefaultTasks() {
   return [
     {
       id: crypto.randomUUID(),
-      title: "Plan one tiny win for today",
+      title: "Design new landing page",
       completed: false,
-      priority: "Calm",
+      priority: "Work",
+      time: "9:00 AM",
+      dueDate: formatDateKey(),
+      createdAt: Date.now() - 1,
+    },
+    {
+      id: crypto.randomUUID(),
+      title: "Update project documentation",
+      completed: false,
+      priority: "Work",
+      time: "11:30 AM",
       dueDate: formatDateKey(),
       createdAt: Date.now() - 2,
     },
     {
       id: crypto.randomUUID(),
-      title: "Drink water and reset the desk",
-      completed: true,
-      priority: "Easy",
+      title: "Reply to client emails",
+      completed: false,
+      priority: "Work",
+      time: "1:00 PM",
       dueDate: formatDateKey(),
-      createdAt: Date.now() - 1,
+      createdAt: Date.now() - 3,
+    },
+    {
+      id: crypto.randomUUID(),
+      title: "Study Japanese for 30 minutes",
+      completed: true,
+      priority: "Personal",
+      time: "4:00 PM",
+      dueDate: formatDateKey(),
+      createdAt: Date.now() - 4,
+    },
+    {
+      id: crypto.randomUUID(),
+      title: "Read a book",
+      completed: false,
+      priority: "Personal",
+      time: "8:00 PM",
+      dueDate: formatDateKey(),
+      createdAt: Date.now() - 5,
     },
   ];
+}
+
+export function hasStoredTasks() {
+  return localStorage.getItem(TASKS_STORAGE_KEY) !== null;
 }
 
 export function loadTasks() {
@@ -42,6 +75,8 @@ export function loadTasks() {
 
     return parsedTasks.map((task) => ({
       ...task,
+      priority: task.priority || "Work",
+      time: task.time || "9:00 AM",
       dueDate: task.dueDate || formatDateKey(new Date(task.createdAt || Date.now())),
     }));
   } catch {

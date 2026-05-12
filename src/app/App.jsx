@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CalendarDays,
-  ImagePlus,
   Leaf,
+  LockKeyhole,
+  Moon,
   Plus,
   Sun,
   Trash2,
@@ -23,71 +24,23 @@ import {
   saveTasksToSupabase,
 } from "../features/tasks/utils/taskRepository.js";
 import { isSupabaseConfigured } from "../features/tasks/utils/supabaseClient.js";
-import { formatDateKey, loadTasks, saveTasks, THEME_STORAGE_KEY } from "../features/tasks/utils/taskStorage.js";
+import {
+  formatDateKey,
+  hasStoredTasks,
+  loadTasks,
+  saveTasks,
+  THEME_STORAGE_KEY,
+} from "../features/tasks/utils/taskStorage.js";
 import EmptyState from "../shared/components/EmptyState.jsx";
 
-const CHARACTER_SETTINGS_KEY = "my-tasks-walking-character";
-const MAX_MASCOTS = 3;
-const legacyCharacterTypes = {
-  lion: "indie",
-  cat: "indie",
-  hamster: "indie",
-  frost: "indie",
-  blade: "indie",
-  stone: "indie",
-};
-const defaultCharacterSettings = {
-  id: "mascot-1",
-  name: "Mascot 1",
-  enabled: true,
-  walking: true,
-  idleAnimations: true,
-  size: 96,
-  speed: 14,
-  pauseDuration: 0.8,
-  walkingAreaHeight: 120,
-  characterType: "indie",
-  popupImages: [],
-};
+const PASSWORD_SESSION_KEY = "my-tasks-password-unlocked";
+const SITE_PASSWORD_HASH = "9e468432d7dde30ef9c431eb88b6951b2928dc337b88f349a5db9d124b88bada";
+const gardenCompanions = [
+  { id: "cuzi", profile: "cuzi" },
+  { id: "cunim", profile: "cunim" },
+];
 
 const taskDateFormatter = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" });
-
-function createMascot(overrides = {}) {
-  return {
-    ...defaultCharacterSettings,
-    id: crypto.randomUUID(),
-    name: "Mascot",
-    ...overrides,
-  };
-}
-
-function normalizeMascot(settings, index = 0) {
-  const characterType = legacyCharacterTypes[settings.characterType] || settings.characterType || "indie";
-
-  return {
-    ...defaultCharacterSettings,
-    ...settings,
-    id: settings.id || crypto.randomUUID(),
-    name: settings.name || `Mascot ${index + 1}`,
-    characterType,
-    popupImages: Array.isArray(settings.popupImages) ? settings.popupImages.slice(0, 5) : [],
-  };
-}
-
-function loadMascots() {
-  const savedSettings = localStorage.getItem(CHARACTER_SETTINGS_KEY);
-
-  if (!savedSettings) {
-    return [createMascot({ id: "mascot-1", name: "Mascot 1" })];
-  }
-
-  try {
-    const parsedSettings = JSON.parse(savedSettings);
-    return (Array.isArray(parsedSettings) ? parsedSettings : [parsedSettings]).slice(0, MAX_MASCOTS).map(normalizeMascot);
-  } catch {
-    return [createMascot({ id: "mascot-1", name: "Mascot 1" })];
-  }
-}
 
 function getTaskDateValue(task) {
   if (task.dueDate) {
@@ -98,17 +51,151 @@ function getTaskDateValue(task) {
   return task.createdAt || 0;
 }
 
+function getTaskTimeValue(task) {
+  if (!task.time) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const match = task.time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+
+  if (!match) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const [, hourValue, minuteValue, meridiem] = match;
+  const hour = Number(hourValue) % 12;
+  const minute = Number(minuteValue);
+
+  return (hour + (meridiem.toUpperCase() === "PM" ? 12 : 0)) * 60 + minute;
+}
+
 function sortTasksByStatusAndDate(taskList) {
   return [...taskList].sort((firstTask, secondTask) => {
     if (firstTask.completed !== secondTask.completed) {
       return firstTask.completed ? 1 : -1;
     }
 
-    return getTaskDateValue(secondTask) - getTaskDateValue(firstTask) || (secondTask.createdAt || 0) - (firstTask.createdAt || 0);
+    return getTaskDateValue(firstTask) - getTaskDateValue(secondTask) || (firstTask.createdAt || 0) - (secondTask.createdAt || 0);
   });
 }
 
-function App() {
+function mergeTasks(remoteTasks, localTasks) {
+  const tasksById = new Map();
+
+  remoteTasks.forEach((task) => {
+    tasksById.set(task.id, task);
+  });
+
+  localTasks.forEach((task) => {
+    tasksById.set(task.id, {
+      ...tasksById.get(task.id),
+      ...task,
+    });
+  });
+
+  return sortTasksByStatusAndDate([...tasksById.values()]);
+}
+
+async function hashPassword(password) {
+  const encodedPassword = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", encodedPassword);
+
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function PasswordGate({ onUnlock }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isChecking, setIsChecking] = useState(false);
+
+  async function unlockWebsite(event) {
+    event.preventDefault();
+    setIsChecking(true);
+    setError("");
+
+    try {
+      const passwordHash = await hashPassword(password);
+
+      if (passwordHash === SITE_PASSWORD_HASH) {
+        sessionStorage.setItem(PASSWORD_SESSION_KEY, "true");
+        onUnlock();
+        return;
+      }
+
+      setError("Wrong password.");
+      setPassword("");
+    } catch (unlockError) {
+      console.warn("Could not check website password.", unlockError);
+      setError("This browser could not check the password.");
+    } finally {
+      setIsChecking(false);
+    }
+  }
+
+  return (
+    <main className="pixel-world relative grid min-h-screen place-items-center overflow-hidden px-4 text-[#241609]">
+      <div className="pixel-sky" aria-hidden="true">
+        <span className="cloud cloud-left" />
+        <span className="cloud cloud-right" />
+      </div>
+      <div className="pixel-hills" aria-hidden="true" />
+      <div className="pixel-garden" aria-hidden="true">
+        <span className="tree tree-left" />
+        <span className="tree tree-right" />
+        <span className="fence fence-left" />
+        <span className="fence fence-right" />
+        <span className="path" />
+        <span className="pond" />
+        <span className="flower-bed flower-left" />
+        <span className="flower-bed flower-right" />
+      </div>
+
+      <section className="pixel-panel relative z-10 w-full max-w-md p-6 sm:p-7">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="grid h-12 w-12 place-items-center bg-[#2f8b45] text-[#fff7d8] shadow-pixel">
+            <LockKeyhole className="h-7 w-7" aria-hidden="true" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-normal">Private Tasks</h1>
+            <p className="text-sm font-bold text-[#7a5124]">Password required</p>
+          </div>
+        </div>
+
+        <form onSubmit={unlockWebsite} className="space-y-4">
+          <div className="pixel-input px-4 py-3">
+            <label htmlFor="website-password" className="sr-only">
+              Website password
+            </label>
+            <input
+              id="website-password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="focus-ring min-h-11 w-full bg-transparent text-lg font-bold text-[#2d1b0b] outline-none placeholder:text-[#9c7847]"
+              placeholder="Enter password"
+              autoComplete="current-password"
+              autoFocus
+            />
+          </div>
+
+          {error && <p className="text-sm font-bold text-[#9c271d]">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={isChecking || password.length === 0}
+            className="focus-ring inline-flex min-h-12 w-full items-center justify-center bg-[#f0c05b] px-5 font-bold text-[#42270f] shadow-pixel transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+          >
+            {isChecking ? "Checking..." : "Unlock"}
+          </button>
+        </form>
+      </section>
+    </main>
+  );
+}
+
+function TodoApp() {
   const [tasks, setTasks] = useState(() => loadTasks());
   const [newTask, setNewTask] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
@@ -116,20 +203,22 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(formatDateKey());
   const [isRemoteReady, setIsRemoteReady] = useState(!isSupabaseConfigured);
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
-  const [mascots, setMascots] = useState(() => loadMascots());
-  const [selectedMascotId, setSelectedMascotId] = useState(() => loadMascots()[0]?.id);
   const [activeReactionTaskId, setActiveReactionTaskId] = useState(null);
   const [isDark, setIsDark] = useState(() => localStorage.getItem(THEME_STORAGE_KEY) === "dark");
-  const selectedMascot = mascots.find((mascot) => mascot.id === selectedMascotId) || mascots[0];
-  const characterSafeSpace = Math.max(
-    112,
-    ...mascots
-      .filter((mascot) => mascot.enabled)
-      .map((mascot, index) => Math.max(mascot.walkingAreaHeight ?? 120, (mascot.size ?? 96) + 22 + index * 12) + index * 18),
-  );
+  const characterSafeSpace = 170;
 
   const completedCount = tasks.filter((task) => task.completed).length;
   const progress = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
+  const nextTask = useMemo(() => {
+    return tasks
+      .filter((task) => !task.completed)
+      .sort(
+        (firstTask, secondTask) =>
+          getTaskDateValue(firstTask) - getTaskDateValue(secondTask) ||
+          getTaskTimeValue(firstTask) - getTaskTimeValue(secondTask) ||
+          (firstTask.createdAt || 0) - (secondTask.createdAt || 0),
+      )[0];
+  }, [tasks]);
 
   const filteredTasks = useMemo(() => {
     let visibleTasks = tasks;
@@ -165,20 +254,20 @@ function App() {
     }
 
     let isMounted = true;
-    const localTasks = loadTasks();
+    const localTasks = hasStoredTasks() ? loadTasks() : [];
 
     async function syncTasksFromSupabase() {
       try {
         const remoteTasks = await loadTasksFromSupabase();
+        const mergedTasks = mergeTasks(remoteTasks, localTasks);
 
         if (!isMounted) {
           return;
         }
 
-        if (remoteTasks.length > 0) {
-          setTasks(remoteTasks);
-        } else {
-          await saveTasksToSupabase(localTasks);
+        if (mergedTasks.length > 0) {
+          setTasks(mergedTasks);
+          await saveTasksToSupabase(mergedTasks);
         }
       } catch (error) {
         console.warn("Could not load tasks from Supabase. Using local tasks for now.", error);
@@ -200,120 +289,6 @@ function App() {
     document.documentElement.classList.toggle("dark", isDark);
     localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light");
   }, [isDark]);
-
-  useEffect(() => {
-    localStorage.setItem(CHARACTER_SETTINGS_KEY, JSON.stringify(mascots));
-  }, [mascots]);
-
-  function updateCharacterSetting(key, value) {
-    if (!selectedMascot) {
-      return;
-    }
-
-    setMascots((currentMascots) =>
-      currentMascots.map((mascot) => (mascot.id === selectedMascot.id ? { ...mascot, [key]: value } : mascot)),
-    );
-  }
-
-  function addCatPictures(event) {
-    const files = Array.from(event.target.files || []);
-    event.target.value = "";
-
-    if (!selectedMascot || files.length === 0) {
-      return;
-    }
-
-    const availableSlots = Math.max(0, 5 - (selectedMascot.popupImages?.length || 0));
-    const imageFiles = files.filter((file) => file.type.startsWith("image/")).slice(0, availableSlots);
-
-    if (imageFiles.length === 0) {
-      return;
-    }
-
-    Promise.all(
-      imageFiles.map(
-        (file) =>
-          new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          }),
-      ),
-    )
-      .then((images) => {
-        setMascots((currentMascots) =>
-          currentMascots.map((mascot) =>
-            mascot.id === selectedMascot.id
-              ? { ...mascot, popupImages: [...(mascot.popupImages || []), ...images].slice(0, 5) }
-              : mascot,
-          ),
-        );
-      })
-      .catch((error) => {
-        console.warn("Could not load cat picture.", error);
-      });
-  }
-
-  function removeCatPicture(indexToRemove) {
-    if (!selectedMascot) {
-      return;
-    }
-
-    setMascots((currentMascots) =>
-      currentMascots.map((mascot) =>
-        mascot.id === selectedMascot.id
-          ? { ...mascot, popupImages: (mascot.popupImages || []).filter((_, index) => index !== indexToRemove) }
-          : mascot,
-      ),
-    );
-  }
-
-  function addMascot() {
-    if (mascots.length >= MAX_MASCOTS) {
-      return;
-    }
-
-    const mascot = createMascot({
-      name: `Mascot ${mascots.length + 1}`,
-      characterType: "indie",
-      speed: Math.max(8, defaultCharacterSettings.speed - mascots.length * 2),
-      size: Math.max(74, defaultCharacterSettings.size - mascots.length * 8),
-    });
-
-    setMascots((currentMascots) => [...currentMascots, mascot]);
-    setSelectedMascotId(mascot.id);
-  }
-
-  function deleteSelectedMascot() {
-    if (!selectedMascot || mascots.length <= 1) {
-      return;
-    }
-
-    setMascots((currentMascots) => {
-      const nextMascots = currentMascots.filter((mascot) => mascot.id !== selectedMascot.id);
-      setSelectedMascotId(nextMascots[0]?.id);
-      return nextMascots;
-    });
-  }
-
-  function resetSelectedMascot() {
-    if (!selectedMascot) {
-      return;
-    }
-
-    setMascots((currentMascots) =>
-      currentMascots.map((mascot, index) =>
-        mascot.id === selectedMascot.id
-          ? createMascot({
-              id: selectedMascot.id,
-              name: selectedMascot.name || `Mascot ${index + 1}`,
-              characterType: selectedMascot.characterType || "indie",
-            })
-          : mascot,
-      ),
-    );
-  }
 
   function showCompletionReaction(taskId) {
     setActiveReactionTaskId(taskId);
@@ -422,8 +397,13 @@ function App() {
         <span className="flower-bed flower-right" />
       </div>
 
-      {mascots.map((mascot, index) => (
-        <WalkingCharacter key={mascot.id} settings={mascot} reactionId={activeReactionTaskId} lane={index} />
+      {gardenCompanions.map((cat, index) => (
+        <WalkingCharacter
+          key={cat.id}
+          profile={cat.profile}
+          reactionId={activeReactionTaskId}
+          lane={index}
+        />
       ))}
 
       <section className="relative z-10 mx-auto flex min-h-[calc(100vh-48px)] w-full max-w-[1250px] flex-col justify-center">
@@ -433,7 +413,7 @@ function App() {
           transition={{ duration: 0.45, ease: "easeOut" }}
           className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,760px)_370px]"
         >
-          <section className="pixel-panel flex h-full flex-col p-4 sm:p-6">
+          <section className="pixel-panel flex h-full flex-col p-4 sm:p-6" data-cat-zone="tasks">
             <header className="mb-5 flex items-center">
               <div className="flex items-center gap-3">
                 <Leaf className="h-7 w-7 fill-[#6a942f] text-[#244f1b]" aria-hidden="true" />
@@ -455,7 +435,7 @@ function App() {
             </div>
 
             <div className="flex flex-1 flex-col space-y-4">
-              <form onSubmit={addTask} className="pixel-input flex flex-wrap items-center gap-3 px-4 py-3">
+              <form onSubmit={addTask} className="pixel-input flex flex-wrap items-center gap-3 px-4 py-3" data-cat-zone="input">
                 <Plus className="h-7 w-7 shrink-0 text-[#9b6a2d]" aria-hidden="true" />
                 <label htmlFor="task-input" className="sr-only">
                   New task
@@ -505,63 +485,27 @@ function App() {
           </section>
 
           <aside className="space-y-4">
-            <div className="pixel-profile flex items-center gap-3 p-3">
-              <div className="grid h-12 w-12 place-items-center bg-[#2f8b45] text-lg font-bold text-[#fff7d8] shadow-pixel">MT</div>
-              <div className="flex-1 border-2 border-[#edd19a] bg-[#fff0bf] px-4 py-3 font-bold">Today</div>
+            <div className="pixel-profile flex items-center gap-3 p-3" data-cat-zone="profile">
+              <div className="grid h-12 w-12 shrink-0 place-items-center bg-[#2f8b45] text-xs font-black leading-none text-[#fff7d8] shadow-pixel">
+                NEXT
+              </div>
+              <div className="min-w-0 flex-1 border-2 border-[#edd19a] bg-[#fff0bf] px-4 py-2 font-bold">
+                <p className="text-xs uppercase leading-4 text-[#7a5124]">Next task</p>
+                <p className="truncate text-sm leading-5 text-[#241609]">
+                  {nextTask ? nextTask.title : "All tasks done"}
+                </p>
+                <p className="text-xs leading-4 text-[#7a5124]">
+                  {nextTask ? `${taskDateFormatter.format(new Date(`${nextTask.dueDate}T00:00:00`))} • ${nextTask.time || "Anytime"}` : "Enjoy the quiet list"}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsDark((current) => !current)}
                 className="focus-ring grid h-12 w-12 place-items-center border-2 border-[#edd19a] bg-[#fff0bf] text-[#241609] transition hover:bg-[#f0c05b]"
                 aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
               >
-                <Sun className="h-7 w-7" />
+                {isDark ? <Sun className="h-7 w-7" /> : <Moon className="h-7 w-7" />}
               </button>
-            </div>
-
-            <div className="pixel-panel p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-bold text-[#241609]">Cat pictures</h2>
-                  <p className="text-xs font-bold text-[#7a5124]">{selectedMascot?.popupImages?.length || 0}/5 saved</p>
-                </div>
-                <label
-                  htmlFor="cat-picture-input"
-                  className={`focus-ring inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 bg-[#f0c05b] px-3 text-sm font-bold text-[#42270f] shadow-pixel transition hover:-translate-y-0.5 ${
-                    (selectedMascot?.popupImages?.length || 0) >= 5 ? "pointer-events-none opacity-45" : ""
-                  }`}
-                >
-                  <ImagePlus className="h-4 w-4" aria-hidden="true" />
-                  Picture
-                </label>
-                <input
-                  id="cat-picture-input"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="sr-only"
-                  onChange={addCatPictures}
-                  disabled={(selectedMascot?.popupImages?.length || 0) >= 5}
-                />
-              </div>
-
-              {(selectedMascot?.popupImages?.length || 0) > 0 && (
-                <div className="grid grid-cols-5 gap-2">
-                  {selectedMascot.popupImages.map((image, index) => (
-                    <button
-                      key={`${image.slice(0, 24)}-${index}`}
-                      type="button"
-                      onClick={() => removeCatPicture(index)}
-                      className="focus-ring relative aspect-square overflow-hidden border-2 border-[#d49a45] bg-[#fff0bf] shadow-pixel"
-                      aria-label={`Remove cat picture ${index + 1}`}
-                    >
-                      <img src={image} alt="" className="h-full w-full object-cover" />
-                      <span className="absolute right-0 top-0 grid h-5 w-5 place-items-center bg-[#9c271d] text-xs font-bold text-[#fff7d8]">
-                        <X className="h-3 w-3" aria-hidden="true" />
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
             <CalendarView tasks={tasks} selectedDate={selectedDate} onSelectDate={selectCalendarDate} />
@@ -631,6 +575,16 @@ function App() {
       </AnimatePresence>
     </main>
   );
+}
+
+function App() {
+  const [isUnlocked, setIsUnlocked] = useState(() => sessionStorage.getItem(PASSWORD_SESSION_KEY) === "true");
+
+  if (!isUnlocked) {
+    return <PasswordGate onUnlock={() => setIsUnlocked(true)} />;
+  }
+
+  return <TodoApp />;
 }
 
 export default App;

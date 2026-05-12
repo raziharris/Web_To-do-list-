@@ -7,6 +7,7 @@ export default {
       boxShadow: {
         soft: "0 24px 70px rgba(79, 88, 102, 0.16)",
         card: "0 14px 34px rgba(79, 88, 102, 0.11)",
+        pixel: "3px 3px 0 #6d4320",
       },
       colors: {
         cloud: "#f8faf7",

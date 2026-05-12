@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 
 function FilterTabs({ filters, activeFilter, onChange }) {
   return (
-    <div className="soft-card flex gap-2 p-2" role="tablist" aria-label="Task filters">
+    <div className="pixel-tabs flex" role="tablist" aria-label="Task filters">
       {filters.map((filter) => {
         const isActive = activeFilter === filter;
 
@@ -13,12 +13,12 @@ function FilterTabs({ filters, activeFilter, onChange }) {
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(filter)}
-            className="focus-ring relative min-h-11 flex-1 rounded-2xl px-4 text-sm font-semibold text-slate-500 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+            className="focus-ring relative min-h-12 flex-1 border-r-2 border-[#c2914e] px-4 text-sm font-bold text-[#2d1b0b] transition last:border-r-0 hover:bg-[#f6dc9d]"
           >
             {isActive && (
               <motion.span
                 layoutId="active-filter"
-                className="absolute inset-0 rounded-2xl bg-skysoft shadow-card dark:bg-slate-800"
+                className="absolute inset-0 bg-[#f0c05b] shadow-pixel"
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             )}

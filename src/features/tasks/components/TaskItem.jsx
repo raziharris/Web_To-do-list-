@@ -48,6 +48,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
       className={`pixel-row group flex cursor-pointer items-center gap-3 px-4 py-3 transition ${
         task.completed ? "opacity-70" : ""
       }`}
+      data-cat-zone="task"
     >
       <button
         type="button"

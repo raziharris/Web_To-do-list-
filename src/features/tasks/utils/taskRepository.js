@@ -8,6 +8,7 @@ function taskFromRow(row) {
     title: row.title,
     completed: row.completed,
     priority: row.priority,
+    time: row.time || "9:00 AM",
     dueDate: row.due_date,
     createdAt: new Date(row.created_at).getTime(),
   };
@@ -19,6 +20,7 @@ function taskToRow(task, position) {
     title: task.title,
     completed: task.completed,
     priority: task.priority || "Focus",
+    time: task.time || "9:00 AM",
     due_date: task.dueDate,
     position,
     created_at: new Date(task.createdAt || Date.now()).toISOString(),
@@ -28,7 +30,7 @@ function taskToRow(task, position) {
 export async function loadTasksFromSupabase() {
   const { data, error } = await supabase
     .from(TASKS_TABLE)
-    .select("id,title,completed,priority,due_date,created_at,position")
+    .select("id,title,completed,priority,time,due_date,created_at,position")
     .order("position", { ascending: true })
     .order("created_at", { ascending: false });
 
