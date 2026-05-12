@@ -304,7 +304,7 @@ function TodoApp() {
 
     refreshTimerId = window.setInterval(() => {
       applyTasksFromSupabase();
-    }, 8000);
+    }, 3000);
 
     return () => {
       isMounted = false;
