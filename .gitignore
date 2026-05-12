@@ -20,3 +20,4 @@ dist/
 tmp-*.png
 vite-*.log
 .env.*.local
+.vercel
