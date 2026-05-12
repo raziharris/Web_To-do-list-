@@ -9,7 +9,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import CalendarView from "../features/tasks/components/CalendarView.jsx";
 import FilterTabs from "../features/tasks/components/FilterTabs.jsx";
 import ProgressCard from "../features/tasks/components/ProgressCard.jsx";
@@ -23,7 +23,7 @@ import {
   loadTasksFromSupabase,
   saveTasksToSupabase,
 } from "../features/tasks/utils/taskRepository.js";
-import { isSupabaseConfigured } from "../features/tasks/utils/supabaseClient.js";
+import { isSupabaseConfigured, supabase } from "../features/tasks/utils/supabaseClient.js";
 import {
   formatDateKey,
   hasStoredTasks,
@@ -34,6 +34,7 @@ import {
 import EmptyState from "../shared/components/EmptyState.jsx";
 
 const PASSWORD_SESSION_KEY = "my-tasks-password-unlocked";
+const REMOTE_MIGRATION_KEY = "my-tasks-remote-migrated";
 const SITE_PASSWORD_HASH = "9e468432d7dde30ef9c431eb88b6951b2928dc337b88f349a5db9d124b88bada";
 const gardenCompanions = [
   { id: "cuzi", profile: "cuzi" },
@@ -205,6 +206,7 @@ function TodoApp() {
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [activeReactionTaskId, setActiveReactionTaskId] = useState(null);
   const [isDark, setIsDark] = useState(() => localStorage.getItem(THEME_STORAGE_KEY) === "dark");
+  const applyingRemoteTasksRef = useRef(false);
   const characterSafeSpace = 170;
 
   const completedCount = tasks.filter((task) => task.completed).length;
@@ -239,6 +241,11 @@ function TodoApp() {
   useEffect(() => {
     saveTasks(tasks);
 
+    if (applyingRemoteTasksRef.current) {
+      applyingRemoteTasksRef.current = false;
+      return;
+    }
+
     if (!isSupabaseConfigured || !isRemoteReady) {
       return;
     }
@@ -254,21 +261,29 @@ function TodoApp() {
     }
 
     let isMounted = true;
-    const localTasks = hasStoredTasks() ? loadTasks() : [];
+    let refreshTimerId;
 
-    async function syncTasksFromSupabase() {
+    async function applyTasksFromSupabase({ mergeLocalTasks = false } = {}) {
       try {
         const remoteTasks = await loadTasksFromSupabase();
-        const mergedTasks = mergeTasks(remoteTasks, localTasks);
+        const shouldMigrateLocalTasks =
+          mergeLocalTasks && localStorage.getItem(REMOTE_MIGRATION_KEY) !== "true" && hasStoredTasks();
+        const nextTasks = shouldMigrateLocalTasks
+          ? mergeTasks(remoteTasks, loadTasks())
+          : sortTasksByStatusAndDate(remoteTasks);
 
         if (!isMounted) {
           return;
         }
 
-        if (mergedTasks.length > 0) {
-          setTasks(mergedTasks);
-          await saveTasksToSupabase(mergedTasks);
+        applyingRemoteTasksRef.current = true;
+        setTasks(nextTasks);
+
+        if (shouldMigrateLocalTasks && nextTasks.length > 0) {
+          await saveTasksToSupabase(nextTasks);
         }
+
+        localStorage.setItem(REMOTE_MIGRATION_KEY, "true");
       } catch (error) {
         console.warn("Could not load tasks from Supabase. Using local tasks for now.", error);
       } finally {
@@ -278,10 +293,23 @@ function TodoApp() {
       }
     }
 
-    syncTasksFromSupabase();
+    applyTasksFromSupabase({ mergeLocalTasks: true });
+
+    const syncChannel = supabase
+      .channel("tasks-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, () => {
+        applyTasksFromSupabase();
+      })
+      .subscribe();
+
+    refreshTimerId = window.setInterval(() => {
+      applyTasksFromSupabase();
+    }, 8000);
 
     return () => {
       isMounted = false;
+      window.clearInterval(refreshTimerId);
+      supabase.removeChannel(syncChannel);
     };
   }, []);
 
