@@ -45,8 +45,8 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
       whileHover={!isEditing ? { y: -2 } : undefined}
       whileTap={!isEditing ? { scale: 0.985 } : undefined}
       onClick={toggleFromCard}
-      className={`pixel-row group flex cursor-pointer items-start gap-3 px-3 py-3 transition sm:items-center sm:px-4 ${
-        task.completed ? "opacity-70" : ""
+      className={`pixel-row group relative flex cursor-pointer items-start gap-3 overflow-hidden px-3 py-3 transition sm:items-center sm:px-4 ${
+        task.completed ? "task-complete opacity-70" : "task-active"
       }`}
       data-cat-zone="task"
     >
@@ -105,6 +105,9 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
               >
                 {task.title}
               </p>
+              <span className="mt-1 inline-flex border-2 border-[#d4a661] bg-[#fff7d8] px-2 py-0.5 text-[10px] font-bold uppercase leading-4 text-[#7a5124] sm:hidden">
+                {formatTaskDate(task.dueDate)}
+              </span>
             </motion.div>
           )}
         </AnimatePresence>

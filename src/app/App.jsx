@@ -3,7 +3,6 @@ import {
   CalendarDays,
   CheckCircle2,
   Fingerprint,
-  Leaf,
   LockKeyhole,
   Moon,
   Plus,
@@ -32,7 +31,6 @@ import {
   hasStoredTasks,
   loadTasks,
   saveTasks,
-  THEME_STORAGE_KEY,
 } from "../features/tasks/utils/taskStorage.js";
 import EmptyState from "../shared/components/EmptyState.jsx";
 
@@ -41,6 +39,7 @@ const FACE_ID_CREDENTIAL_KEY = "my-tasks-face-id-credential";
 const FACE_ID_USER_KEY = "my-tasks-face-id-user";
 const REMOTE_MIGRATION_KEY = "my-tasks-remote-migrated";
 const SITE_PASSWORD_HASH = "9e468432d7dde30ef9c431eb88b6951b2928dc337b88f349a5db9d124b88bada";
+const MALAYSIA_TIME_ZONE = "Asia/Kuala_Lumpur";
 const gardenCompanions = [
   { id: "cuzi", profile: "cuzi" },
   { id: "cunim", profile: "cunim" },
@@ -100,6 +99,36 @@ function mergeTasks(remoteTasks, localTasks) {
   });
 
   return sortTasksByStatusAndDate([...tasksById.values()]);
+}
+
+function getMalaysiaMinutes(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: MALAYSIA_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+
+  return hour * 60 + minute;
+}
+
+function getMalaysiaSkyState(date = new Date()) {
+  const minutes = getMalaysiaMinutes(date);
+  const sunrise = 7 * 60;
+  const sunset = 19 * 60;
+  const isDark = minutes >= sunset || minutes < sunrise;
+  const cycleMinutes = isDark
+    ? ((minutes - sunset + 24 * 60) % (12 * 60)) / (12 * 60)
+    : (minutes - sunrise) / (sunset - sunrise);
+  const arc = Math.sin(Math.PI * cycleMinutes);
+
+  return {
+    isDark,
+    skyX: isDark ? 88 - 76 * cycleMinutes : 12 + 76 * cycleMinutes,
+    skyY: 24 - 15 * arc,
+  };
 }
 
 async function hashPassword(password) {
@@ -382,12 +411,16 @@ function TodoApp() {
   const [isRemoteReady, setIsRemoteReady] = useState(!isSupabaseConfigured);
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [activeReactionTaskId, setActiveReactionTaskId] = useState(null);
-  const [isDark, setIsDark] = useState(() => localStorage.getItem(THEME_STORAGE_KEY) === "dark");
+  const [skyState, setSkyState] = useState(() => getMalaysiaSkyState());
+  const [themeOverride, setThemeOverride] = useState(null);
   const applyingRemoteTasksRef = useRef(false);
   const characterSafeSpace = 170;
+  const isDark = themeOverride ?? skyState.isDark;
 
   const completedCount = tasks.filter((task) => task.completed).length;
+  const pendingCount = tasks.length - completedCount;
   const progress = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
+  const progressLabel = progress === 100 ? "All settled" : progress >= 60 ? "Good rhythm" : progress > 0 ? "In motion" : "Fresh start";
   const nextTask = useMemo(() => {
     return tasks
       .filter((task) => !task.completed)
@@ -491,9 +524,23 @@ function TodoApp() {
   }, []);
 
   useEffect(() => {
+    function syncMalaysiaTheme() {
+      setSkyState(getMalaysiaSkyState());
+    }
+
+    syncMalaysiaTheme();
+    const themeTimerId = window.setInterval(syncMalaysiaTheme, 60000);
+
+    return () => window.clearInterval(themeTimerId);
+  }, []);
+
+  useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
-    localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light");
   }, [isDark]);
+
+  function toggleTheme() {
+    setThemeOverride((currentOverride) => !(currentOverride ?? skyState.isDark));
+  }
 
   function showCompletionReaction(taskId) {
     setActiveReactionTaskId(taskId);
@@ -582,8 +629,12 @@ function TodoApp() {
 
   return (
     <main
-      className="pixel-world relative min-h-screen overflow-hidden px-4 pt-6 text-[#241609] sm:px-6 lg:px-8"
-      style={{ paddingBottom: characterSafeSpace + 32 }}
+      className="pixel-world relative min-h-screen overflow-hidden px-4 pt-24 text-[#241609] sm:px-6 sm:pt-28 lg:px-8 lg:pt-32"
+      style={{
+        paddingBottom: characterSafeSpace + 32,
+        "--sky-body-x": `${skyState.skyX}%`,
+        "--sky-body-y": `${skyState.skyY}%`,
+      }}
     >
       <div className="pixel-sky" aria-hidden="true">
         <span className="cloud cloud-left" />
@@ -611,7 +662,7 @@ function TodoApp() {
         />
       ))}
 
-      <section className="mobile-view-scale relative z-10 mx-auto flex min-h-[calc(100vh-48px)] w-full max-w-[1250px] flex-col items-center justify-center">
+      <section className="mobile-view-scale relative z-10 mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-[1250px] flex-col items-center justify-start">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
@@ -619,19 +670,38 @@ function TodoApp() {
           className="grid w-full max-w-[430px] items-stretch gap-5 sm:max-w-[560px] lg:max-w-none lg:grid-cols-[minmax(0,760px)_370px]"
         >
           <section className="pixel-panel flex h-full flex-col p-4 sm:p-6" data-cat-zone="tasks">
-            <header className="mb-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <Leaf className="h-7 w-7 fill-[#6a942f] text-[#244f1b]" aria-hidden="true" />
-                <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">My Tasks</h1>
+            <header className="app-header mb-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center">
+                  <h1 className="app-title truncate text-3xl leading-none text-[#241609] sm:text-4xl">JomSettle</h1>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="focus-ring inline-flex h-10 shrink-0 items-center gap-2 border-2 border-[#d9b678] bg-[#fff9e8] px-3 text-[#5c3921] shadow-pixel transition hover:-translate-y-0.5 hover:bg-[#f0c05b] sm:h-11"
+                  aria-label={isDark ? "Switch to day mode" : "Switch to night mode"}
+                >
+                  {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                  <span className="hidden text-xs font-bold uppercase tracking-[0.08em] sm:inline">
+                    {isDark ? "Night" : "Day"}
+                  </span>
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsDark((current) => !current)}
-                className="focus-ring grid h-11 w-11 shrink-0 place-items-center border-2 border-[#edd19a] bg-[#fff0bf] text-[#241609] transition hover:bg-[#f0c05b] sm:h-12 sm:w-12"
-                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+
+              <div className="mb-2 flex items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#7a5124]">
+                <span>{progressLabel}</span>
+                <span>{pendingCount} left</span>
+              </div>
+              <div
+                className="header-progress h-3 overflow-hidden border-2 border-[#a87a3a] bg-[#dfb96e]"
+                role="progressbar"
+                aria-label="Task completion progress"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow={progress}
               >
-                {isDark ? <Sun className="h-6 w-6 sm:h-7 sm:w-7" /> : <Moon className="h-6 w-6 sm:h-7 sm:w-7" />}
-              </button>
+                <div className="h-full bg-[#3d9348] transition-[width] duration-500" style={{ width: `${progress}%` }} />
+              </div>
             </header>
 
             <section
@@ -643,7 +713,7 @@ function TodoApp() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <p className="text-[11px] uppercase leading-4 tracking-[0.08em] text-[#7a5124]">Next task</p>
+                  <p className="text-[11px] uppercase leading-4 tracking-[0.08em] text-[#7a5124]">Focus now</p>
                   <span className="inline-flex items-center gap-1 border-2 border-[#d4a661] bg-[#fff7d8] px-2 py-0.5 text-[10px] uppercase leading-4 text-[#2f6d32]">
                     <CalendarDays className="h-3 w-3" aria-hidden="true" />
                     {nextTask ? taskDateFormatter.format(new Date(`${nextTask.dueDate}T00:00:00`)) : "Clear"}
@@ -652,16 +722,6 @@ function TodoApp() {
                 <p className="max-w-full break-words text-lg leading-6 text-[#241609] [overflow-wrap:anywhere]">
                   {nextTask ? nextTask.title : "All tasks done"}
                 </p>
-                <div
-                  className="mt-3 h-2 overflow-hidden border-2 border-[#a87a3a] bg-[#dcae59]"
-                  role="progressbar"
-                  aria-label="Task completion progress"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                  aria-valuenow={progress}
-                >
-                  <div className="h-full bg-[#3d9348] transition-[width] duration-500" style={{ width: `${progress}%` }} />
-                </div>
               </div>
             </section>
 
@@ -679,11 +739,11 @@ function TodoApp() {
             </div>
 
             <div className="flex flex-1 flex-col space-y-4">
-              <form onSubmit={addTask} className="pixel-input add-task-input flex flex-wrap items-center gap-3 px-4 py-4 sm:px-5" data-cat-zone="input">
+              <form onSubmit={addTask} className="add-task-input flex flex-wrap items-center gap-3 px-4 py-4 sm:px-5" data-cat-zone="input">
                 <motion.button
                   whileTap={{ scale: 0.92 }}
                   type="submit"
-                  className="focus-ring grid h-12 w-12 shrink-0 place-items-center bg-[#f0c05b] text-[#42270f] shadow-pixel transition hover:-translate-y-0.5 sm:h-14 sm:w-14"
+                  className="focus-ring add-task-button grid h-12 w-12 shrink-0 place-items-center text-[#42270f] transition hover:-translate-y-0.5 sm:h-14 sm:w-14"
                   aria-label="Add task"
                 >
                   <Plus className="h-8 w-8 sm:h-9 sm:w-9" aria-hidden="true" />
@@ -695,12 +755,12 @@ function TodoApp() {
                   id="task-input"
                   value={newTask}
                   onChange={(event) => setNewTask(event.target.value)}
-                  className="focus-ring min-h-12 min-w-0 flex-[1_1_220px] bg-transparent text-lg font-bold leading-7 text-[#2d1b0b] outline-none placeholder:text-[#9c7847] sm:min-h-14 sm:text-xl"
-                  placeholder="Add a new task..."
+                  className="focus-ring min-h-12 min-w-0 flex-[1_1_220px] bg-transparent text-lg font-semibold leading-7 text-[#2d1b0b] outline-none placeholder:text-[#9c7847] sm:min-h-14 sm:text-xl"
+                  placeholder=""
                   maxLength={120}
                   autoComplete="off"
                 />
-                <span className="inline-flex min-h-10 min-w-0 items-center gap-2 px-2 text-xs font-bold uppercase tracking-[0.08em] text-[#7a5124] sm:min-h-12">
+                <span className="add-task-date inline-flex min-h-10 min-w-0 items-center gap-2 px-2 text-xs font-bold uppercase tracking-[0.08em] text-[#7a5124] sm:min-h-12">
                   <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
                   <span className="truncate">{taskDateFormatter.format(new Date(`${selectedDate}T00:00:00`))}</span>
                 </span>

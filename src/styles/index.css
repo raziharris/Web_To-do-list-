@@ -4,17 +4,17 @@
 
 :root {
   color-scheme: light;
-  --parchment: #fff0bf;
-  --parchment-light: #fff7d8;
-  --wood: #6d4320;
+  --parchment: #fff4d2;
+  --parchment-light: #fff9e8;
+  --wood: #5c3921;
   --wood-light: #b88947;
 }
 
 .dark {
   color-scheme: dark;
-  --parchment: #fff0bf;
-  --parchment-light: #fff7d8;
-  --wood: #6d4320;
+  --parchment: #fff4d2;
+  --parchment-light: #fff9e8;
+  --wood: #5c3921;
   --wood-light: #b88947;
 }
 
@@ -38,8 +38,9 @@ body {
 
 @media (max-width: 639px) {
   .mobile-view-scale {
-    width: 104.1667%;
-    max-width: 104.1667%;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
     transform: scale(0.96);
     transform-origin: top center;
   }
@@ -66,11 +67,11 @@ button {
   .next-task-card {
     border: 4px solid var(--wood);
     background:
-      linear-gradient(135deg, rgba(255, 255, 255, 0.32), transparent 42%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.44), transparent 46%),
       var(--parchment);
     box-shadow:
-      0 0 0 2px #d19a4a inset,
-      5px 5px 0 rgba(61, 34, 13, 0.62);
+      0 0 0 2px rgba(185, 138, 82, 0.58) inset,
+      4px 4px 0 rgba(61, 34, 13, 0.42);
   }
 
   .pixel-panel {
@@ -83,7 +84,7 @@ button {
     pointer-events: none;
     position: absolute;
     inset: 6px;
-    border: 2px solid rgba(175, 121, 49, 0.55);
+    border: 2px solid rgba(185, 138, 82, 0.34);
   }
 
   .pixel-profile {
@@ -94,13 +95,81 @@ button {
     min-height: 68px;
   }
 
+  .app-header {
+    position: relative;
+    padding-bottom: 14px;
+  }
+
+  .app-title {
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 650;
+    letter-spacing: 0;
+  }
+
+  .header-progress {
+    position: relative;
+  }
+
+  .header-progress > div {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header-progress > div::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 249, 232, 0.46), transparent);
+    animation: settle-progress-shine 2.8s ease-in-out infinite;
+  }
+
   .add-task-input {
+    position: relative;
+    overflow: hidden;
+    min-height: 78px;
+    border: 3px solid rgba(92, 57, 33, 0.82);
     background:
-      linear-gradient(135deg, rgba(255, 247, 216, 0.38), transparent 44%),
-      #e9c789;
+      linear-gradient(135deg, rgba(255, 249, 232, 0.72), transparent 48%),
+      linear-gradient(90deg, rgba(255, 249, 232, 0.64), rgba(234, 208, 160, 0.86)),
+      #ead0a0;
     box-shadow:
-      0 0 0 2px #b88947 inset,
-      5px 5px 0 rgba(61, 34, 13, 0.62);
+      0 0 0 2px rgba(255, 249, 232, 0.42) inset,
+      4px 4px 0 rgba(61, 34, 13, 0.32);
+  }
+
+  .add-task-input::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    right: 14px;
+    top: 12px;
+    width: 54px;
+    height: 34px;
+    opacity: 0.26;
+    background:
+      linear-gradient(#5c3921 0 0) 0 0 / 10px 10px no-repeat,
+      linear-gradient(#c8934a 0 0) 22px 8px / 10px 10px no-repeat,
+      linear-gradient(#6f9f4f 0 0) 42px 2px / 10px 10px no-repeat;
+  }
+
+  .add-task-input > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .add-task-button {
+    border: 2px solid #6d4320;
+    background:
+      linear-gradient(135deg, rgba(255, 249, 232, 0.38), transparent 48%),
+      #f0c05b;
+    box-shadow:
+      0 0 0 2px rgba(255, 249, 232, 0.26) inset,
+      3px 3px 0 rgba(61, 34, 13, 0.4);
+  }
+
+  .add-task-date {
+    border: 2px solid rgba(185, 138, 82, 0.58);
+    background: rgba(255, 249, 232, 0.46);
   }
 
   .pixel-tabs {
@@ -109,14 +178,64 @@ button {
 
   .pixel-row {
     min-height: 68px;
-    border-right: 2px solid #d0a66c;
-    border-bottom: 2px solid #d0a66c;
-    border-left: 2px solid #d0a66c;
-    background: rgba(255, 247, 216, 0.88);
+    border-right: 2px solid rgba(185, 138, 82, 0.58);
+    border-bottom: 2px solid rgba(185, 138, 82, 0.58);
+    border-left: 2px solid rgba(185, 138, 82, 0.58);
+    background: rgba(255, 249, 232, 0.88);
   }
 
   .pixel-row:first-child {
-    border-top: 2px solid #d0a66c;
+    border-top: 2px solid rgba(185, 138, 82, 0.58);
+  }
+
+  .task-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: #c8934a;
+  }
+
+  .task-complete::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: #6f9f4f;
+  }
+
+  .task-active:hover {
+    background:
+      linear-gradient(90deg, rgba(240, 192, 91, 0.16), transparent 34%),
+      rgba(255, 249, 232, 0.94);
+  }
+
+  .dark .pixel-panel,
+  .dark .pixel-profile,
+  .dark .pixel-input,
+  .dark .pixel-tabs,
+  .dark .next-task-card {
+    background:
+      linear-gradient(135deg, rgba(255, 249, 232, 0.2), transparent 46%),
+      #d9bd87;
+    box-shadow:
+      0 0 0 2px rgba(185, 138, 82, 0.48) inset,
+      4px 4px 0 rgba(9, 15, 20, 0.42);
+  }
+
+  .dark .pixel-row {
+    background: rgba(232, 204, 155, 0.9);
+  }
+
+  .dark .add-task-input {
+    background:
+      linear-gradient(135deg, rgba(255, 249, 232, 0.24), transparent 48%),
+      linear-gradient(90deg, rgba(255, 249, 232, 0.22), rgba(207, 174, 120, 0.88)),
+      #cfae78;
   }
 
   .next-task-card {
@@ -129,7 +248,7 @@ button {
     pointer-events: none;
     position: absolute;
     inset: 8px;
-    border: 2px solid rgba(175, 121, 49, 0.32);
+    border: 2px solid rgba(185, 138, 82, 0.24);
   }
 
   .next-task-card > * {
@@ -145,7 +264,7 @@ button {
     top: 12px;
     width: 72px;
     height: 46px;
-    opacity: 0.42;
+    opacity: 0.28;
     background:
       radial-gradient(circle at 18px 18px, #f0c05b 0 5px, transparent 6px),
       radial-gradient(circle at 42px 12px, #6a942f 0 4px, transparent 5px),
@@ -269,7 +388,7 @@ button {
 .pixel-world {
   isolation: isolate;
   background:
-    linear-gradient(#54b8df 0 34%, #83d9f3 34% 45%, #78bf62 45% 59%, #43883b 59% 100%);
+    linear-gradient(#75c9e9 0 34%, #b5e8f6 34% 45%, #8bcf72 45% 59%, #5a9b4d 59% 100%);
 }
 
 .dark .pixel-world {
@@ -288,15 +407,13 @@ button {
 .pixel-sky {
   z-index: -3;
   background:
-    radial-gradient(circle at 78% 15%, rgba(255, 239, 135, 0.92) 0 28px, rgba(255, 239, 135, 0.28) 29px 52px, transparent 53px),
-    radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.32) 0 34px, transparent 35px),
-    linear-gradient(180deg, #46addb 0%, #86d9f5 46%, transparent 47%),
-    repeating-linear-gradient(0deg, transparent 0 12px, rgba(255, 255, 255, 0.08) 12px 14px);
+    radial-gradient(circle at var(--sky-body-x, 78%) var(--sky-body-y, 15%), rgba(255, 238, 158, 0.72) 0 25px, rgba(255, 238, 158, 0.16) 26px 48px, transparent 49px),
+    linear-gradient(180deg, #75c9e9 0%, #b5e8f6 46%, transparent 47%);
 }
 
 .dark .pixel-sky {
   background:
-    radial-gradient(circle at 82% 18%, rgba(255, 241, 199, 0.92) 0 22px, rgba(255, 241, 199, 0.18) 23px 46px, transparent 47px),
+    radial-gradient(circle at var(--sky-body-x, 82%) var(--sky-body-y, 18%), rgba(255, 241, 199, 0.92) 0 22px, rgba(255, 241, 199, 0.18) 23px 46px, transparent 47px),
     radial-gradient(circle at 18% 16%, rgba(255, 241, 199, 0.65) 0 2px, transparent 3px),
     radial-gradient(circle at 34% 24%, rgba(255, 241, 199, 0.55) 0 2px, transparent 3px),
     radial-gradient(circle at 66% 12%, rgba(255, 241, 199, 0.5) 0 2px, transparent 3px),
@@ -310,13 +427,15 @@ button {
   position: absolute;
   width: 132px;
   height: 34px;
-  background: #fff4d4;
+  background: rgba(255, 249, 232, 0.82);
   box-shadow:
-    22px -18px 0 2px #fff4d4,
-    48px -28px 0 8px #fff4d4,
-    76px -17px 0 4px #fff4d4,
-    104px -5px 0 -2px #fff4d4,
-    0 8px 0 rgba(221, 202, 156, 0.6);
+    22px -18px 0 2px rgba(255, 249, 232, 0.82),
+    48px -28px 0 8px rgba(255, 249, 232, 0.82),
+    76px -17px 0 4px rgba(255, 249, 232, 0.82),
+    104px -5px 0 -2px rgba(255, 249, 232, 0.82),
+    0 8px 0 rgba(221, 202, 156, 0.34);
+  opacity: 0.72;
+  animation: cloud-drift 18s ease-in-out infinite;
 }
 
 .dark .cloud {
@@ -339,17 +458,18 @@ button {
   right: 22px;
   top: 72px;
   transform: scale(0.75);
+  animation-duration: 23s;
+  animation-delay: -6s;
 }
 
 .pixel-hills {
   z-index: -2;
   top: 36%;
   background:
-    radial-gradient(ellipse at 14% 58%, #8ccf72 0 17%, transparent 18%),
-    radial-gradient(ellipse at 34% 61%, #6fae5d 0 22%, transparent 23%),
-    radial-gradient(ellipse at 61% 57%, #8dd47a 0 24%, transparent 25%),
-    radial-gradient(ellipse at 84% 60%, #5ca452 0 19%, transparent 20%),
-    linear-gradient(180deg, transparent 0 54%, rgba(65, 132, 58, 0.32) 55% 100%);
+    radial-gradient(ellipse at 14% 58%, #9bd682 0 17%, transparent 18%),
+    radial-gradient(ellipse at 34% 61%, #7fbd6c 0 22%, transparent 23%),
+    radial-gradient(ellipse at 61% 57%, #a2dc8b 0 24%, transparent 25%),
+    radial-gradient(ellipse at 84% 60%, #70b462 0 19%, transparent 20%);
 }
 
 .dark .pixel-hills {
@@ -367,14 +487,12 @@ button {
   height: 45vh;
   min-height: 330px;
   background:
-    radial-gradient(circle at 12% 70%, #ffef87 0 4px, transparent 5px),
-    radial-gradient(circle at 16% 76%, #ffb1cf 0 4px, transparent 5px),
-    radial-gradient(circle at 76% 66%, #ffffff 0 4px, transparent 5px),
-    radial-gradient(circle at 82% 72%, #e7b8ff 0 4px, transparent 5px),
-    radial-gradient(circle at 92% 62%, #ffef87 0 4px, transparent 5px),
-    repeating-linear-gradient(90deg, rgba(29, 99, 34, 0.38) 0 10px, rgba(48, 128, 43, 0.38) 10px 18px),
-    linear-gradient(#69b95a 0 40%, #85c75a 40% 62%, #2f7d3c 62% 100%);
-  border-top: 8px solid #4d8b3a;
+    radial-gradient(circle at 12% 70%, rgba(255, 239, 135, 0.8) 0 4px, transparent 5px),
+    radial-gradient(circle at 16% 76%, rgba(255, 177, 207, 0.72) 0 4px, transparent 5px),
+    radial-gradient(circle at 82% 72%, rgba(231, 184, 255, 0.68) 0 4px, transparent 5px),
+    repeating-linear-gradient(90deg, rgba(29, 99, 34, 0.22) 0 10px, rgba(48, 128, 43, 0.22) 10px 18px),
+    linear-gradient(#78bf62 0 40%, #98d36b 40% 62%, #4d9860 62% 100%);
+  border-top: 8px solid rgba(77, 139, 58, 0.7);
 }
 
 .dark .pixel-garden {
@@ -395,14 +513,13 @@ button {
   right: -8%;
   bottom: 76px;
   height: 86px;
-  border-top: 6px solid #9d6e33;
-  border-bottom: 6px solid #9d6e33;
+  border-top: 6px solid rgba(126, 84, 45, 0.78);
+  border-bottom: 6px solid rgba(126, 84, 45, 0.78);
   background:
-    radial-gradient(circle at 14% 48%, rgba(255, 247, 216, 0.28) 0 7px, transparent 8px),
-    radial-gradient(circle at 43% 58%, rgba(255, 247, 216, 0.24) 0 6px, transparent 7px),
-    radial-gradient(circle at 72% 42%, rgba(255, 247, 216, 0.24) 0 7px, transparent 8px),
-    repeating-linear-gradient(90deg, #dcae59 0 24px, #c99548 24px 30px),
-    #dcae59;
+    radial-gradient(circle at 14% 48%, rgba(255, 249, 232, 0.24) 0 7px, transparent 8px),
+    radial-gradient(circle at 72% 42%, rgba(255, 249, 232, 0.2) 0 7px, transparent 8px),
+    repeating-linear-gradient(90deg, #dfb96e 0 24px, #d1a45d 24px 30px),
+    #dfb96e;
   transform: rotate(-1deg);
 }
 
@@ -412,12 +529,12 @@ button {
   bottom: -34px;
   width: 330px;
   height: 104px;
-  border: 8px solid #59654a;
+  border: 8px solid rgba(89, 101, 74, 0.74);
   border-radius: 48% 52% 0 0;
   background:
-    radial-gradient(ellipse at 68% 36%, rgba(255, 255, 255, 0.42) 0 22px, transparent 23px),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.22) 0 5px, transparent 5px 14px),
-    linear-gradient(135deg, #43a8c7, #267ca3);
+    radial-gradient(ellipse at 68% 36%, rgba(255, 255, 255, 0.34) 0 22px, transparent 23px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.16) 0 5px, transparent 5px 14px),
+    linear-gradient(135deg, #65bfd1, #3d8fb0);
   box-shadow: inset 0 10px 0 rgba(255, 255, 255, 0.16);
 }
 
@@ -426,8 +543,8 @@ button {
   bottom: 126px;
   width: 92px;
   height: 210px;
-  background: #6b3f1e;
-  box-shadow: inset 14px 0 #8a5a28;
+  background: #6a4326;
+  box-shadow: inset 12px 0 rgba(138, 90, 40, 0.72);
 }
 
 .tree::before {
@@ -438,10 +555,10 @@ button {
   width: 230px;
   height: 170px;
   background:
-    radial-gradient(circle at 34% 42%, #95c943 0 24%, transparent 25%),
-    radial-gradient(circle at 58% 28%, #76ae35 0 28%, transparent 29%),
-    radial-gradient(circle at 70% 56%, #5a9d31 0 30%, transparent 31%),
-    radial-gradient(circle at 28% 68%, #5e9f2e 0 30%, transparent 31%);
+    radial-gradient(circle at 34% 42%, #9ccf57 0 24%, transparent 25%),
+    radial-gradient(circle at 58% 28%, #83ba4d 0 28%, transparent 29%),
+    radial-gradient(circle at 70% 56%, #6aa84a 0 30%, transparent 31%),
+    radial-gradient(circle at 28% 68%, #73ad4d 0 30%, transparent 31%);
 }
 
 .tree-left {
@@ -460,9 +577,9 @@ button {
   bottom: 150px;
   display: block;
   width: 140px;
-  border: 5px solid #593412;
-  background: #b9782d;
-  box-shadow: 4px 4px 0 #36200d;
+  border: 5px solid #5c3921;
+  background: #c8934a;
+  box-shadow: 4px 4px 0 rgba(54, 32, 13, 0.72);
   color: #211306;
   font-size: 23px;
   font-weight: 700;
@@ -475,7 +592,7 @@ button {
   position: absolute;
   bottom: 158px;
   height: 42px;
-  background: repeating-linear-gradient(90deg, #8c5a27 0 12px, transparent 12px 34px);
+  background: repeating-linear-gradient(90deg, rgba(140, 90, 39, 0.82) 0 12px, transparent 12px 34px);
 }
 
 .fence-left {
@@ -494,12 +611,11 @@ button {
   width: 180px;
   height: 70px;
   background:
-    radial-gradient(circle at 20% 40%, #ffef87 0 5px, transparent 6px),
-    radial-gradient(circle at 42% 56%, #ffb1cf 0 5px, transparent 6px),
-    radial-gradient(circle at 70% 36%, #ffffff 0 5px, transparent 6px),
-    radial-gradient(circle at 86% 62%, #e7b8ff 0 5px, transparent 6px),
-    radial-gradient(circle at 56% 28%, #f0c05b 0 4px, transparent 5px),
-    linear-gradient(transparent 0 44%, rgba(38, 112, 43, 0.42) 45% 100%);
+    radial-gradient(circle at 20% 40%, rgba(255, 239, 135, 0.78) 0 5px, transparent 6px),
+    radial-gradient(circle at 42% 56%, rgba(255, 177, 207, 0.72) 0 5px, transparent 6px),
+    radial-gradient(circle at 70% 36%, rgba(255, 255, 255, 0.78) 0 5px, transparent 6px),
+    radial-gradient(circle at 86% 62%, rgba(231, 184, 255, 0.72) 0 5px, transparent 6px),
+    linear-gradient(transparent 0 44%, rgba(38, 112, 43, 0.26) 45% 100%);
 }
 
 .flower-left {
@@ -508,6 +624,38 @@ button {
 
 .flower-right {
   right: 90px;
+}
+
+@keyframes settle-progress-shine {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  35%,
+  65% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes cloud-drift {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 14px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud,
+  .header-progress > div::after {
+    animation: none;
+  }
 }
 
 @keyframes cute-bubble-glow {

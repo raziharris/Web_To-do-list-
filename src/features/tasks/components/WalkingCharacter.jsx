@@ -125,12 +125,12 @@ function WalkingCharacter({ profile = "cuzi", reactionId, lane = 0 }) {
   const rawX = useMotionValue(0);
   const smoothX = useSpring(rawX, { stiffness: cat.speed > 1 ? 62 : 42, damping: cat.speed > 1 ? 18 : 24, mass: 0.85 });
 
-  const responsiveScale = viewport.width < 640 ? 0.68 : 0.78;
+  const responsiveScale = viewport.width < 640 ? 0.62 : 0.72;
   const size = Math.min(76 * responsiveScale, Math.max(viewport.width - 48, 52));
   const leftEdge = 18 + lane * 8;
   const rightEdge = Math.max(leftEdge, viewport.width - size - 22 - lane * 8);
   const gardenHeight = Math.max(230, viewport.height * 0.32);
-  const y = Math.min(gardenHeight - size * 0.76 - 18, 58 + cat.yOffset);
+  const y = Math.max(112, Math.min(gardenHeight - size * 0.74 - 18, 126 + cat.yOffset));
   const stepDuration = profile === "cuzi" ? 0.44 : 0.68;
   const spriteSrc = isWalking
     ? pixelCatSprites.walk[walkFrameSequence[walkFrame]]
@@ -251,7 +251,7 @@ function WalkingCharacter({ profile = "cuzi", reactionId, lane = 0 }) {
   return (
     <div
       className={`pointer-events-none fixed inset-x-0 bottom-0 h-[45vh] min-h-[230px] overflow-visible ${
-        celebrating ? "z-40" : "z-[1]"
+        celebrating ? "z-40" : "z-[8]"
       }`}
       aria-hidden="true"
     >
