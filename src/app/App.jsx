@@ -414,13 +414,12 @@ function TodoApp() {
   const [skyState, setSkyState] = useState(() => getMalaysiaSkyState());
   const [themeOverride, setThemeOverride] = useState(null);
   const applyingRemoteTasksRef = useRef(false);
-  const characterSafeSpace = 170;
+  const characterSafeSpace = 132;
   const isDark = themeOverride ?? skyState.isDark;
 
   const completedCount = tasks.filter((task) => task.completed).length;
   const pendingCount = tasks.length - completedCount;
   const progress = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
-  const progressLabel = progress === 100 ? "All settled" : progress >= 60 ? "Good rhythm" : progress > 0 ? "In motion" : "Fresh start";
   const nextTask = useMemo(() => {
     return tasks
       .filter((task) => !task.completed)
@@ -688,8 +687,7 @@ function TodoApp() {
                 </button>
               </div>
 
-              <div className="mb-2 flex items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#7a5124]">
-                <span>{progressLabel}</span>
+              <div className="mb-2 flex items-center justify-end gap-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#7a5124]">
                 <span>{pendingCount} left</span>
               </div>
               <div
