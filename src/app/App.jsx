@@ -14,6 +14,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import CalendarView from "../features/tasks/components/CalendarView.jsx";
 import FilterTabs from "../features/tasks/components/FilterTabs.jsx";
+import PixelBirds from "../features/tasks/components/PixelBirds.jsx";
 import ProgressCard from "../features/tasks/components/ProgressCard.jsx";
 import TaskItem from "../features/tasks/components/TaskItem.jsx";
 import WalkingCharacter from "../features/tasks/components/WalkingCharacter.jsx";
@@ -651,6 +652,7 @@ function TodoApp() {
         <span className="flower-bed flower-left" />
         <span className="flower-bed flower-right" />
       </div>
+      <PixelBirds />
 
       {gardenCompanions.map((cat, index) => (
         <WalkingCharacter

@@ -32,7 +32,7 @@ body {
   margin: 0;
   overflow-x: hidden;
   background: #5fbbe0;
-  font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
   image-rendering: pixelated;
 }
 
@@ -588,6 +588,7 @@ button {
   line-height: 1.08;
   padding: 10px;
   text-align: center;
+  font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .fence {
@@ -628,6 +629,65 @@ button {
   right: 90px;
 }
 
+.pixel-birds {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+}
+
+.pixel-bird {
+  position: absolute;
+  left: -80px;
+  top: var(--bird-top);
+  display: block;
+  width: 48px;
+  height: 28px;
+  transform: scale(var(--bird-scale));
+  transform-origin: center;
+  animation: bird-flight var(--bird-duration) linear infinite;
+  animation-delay: var(--bird-delay);
+}
+
+.pixel-bird-body,
+.pixel-bird-wing {
+  position: absolute;
+  display: block;
+  background: #4b2b16;
+  box-shadow: 2px 2px 0 rgba(255, 249, 232, 0.42);
+}
+
+.pixel-bird-body {
+  left: 19px;
+  top: 12px;
+  width: 10px;
+  height: 8px;
+}
+
+.pixel-bird-wing {
+  top: 10px;
+  width: 18px;
+  height: 6px;
+  animation: bird-flap 0.72s steps(2, end) infinite;
+}
+
+.pixel-bird-wing-left {
+  left: 2px;
+  transform-origin: right center;
+}
+
+.pixel-bird-wing-right {
+  right: 2px;
+  transform-origin: left center;
+}
+
+.dark .pixel-bird-body,
+.dark .pixel-bird-wing {
+  background: #f4dfaa;
+  box-shadow: 2px 2px 0 rgba(14, 22, 34, 0.42);
+}
+
 @keyframes settle-progress-shine {
   0% {
     transform: translateX(-100%);
@@ -643,6 +703,34 @@ button {
   }
 }
 
+@keyframes bird-flight {
+  0% {
+    translate: -8vw 0;
+  }
+  22% {
+    translate: 22vw -10px;
+  }
+  50% {
+    translate: 52vw 8px;
+  }
+  76% {
+    translate: 78vw -6px;
+  }
+  100% {
+    translate: 112vw 2px;
+  }
+}
+
+@keyframes bird-flap {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -5px;
+  }
+}
+
 @keyframes cloud-drift {
   0%,
   100% {
@@ -655,6 +743,8 @@ button {
 
 @media (prefers-reduced-motion: reduce) {
   .cloud,
+  .pixel-bird,
+  .pixel-bird-wing,
   .header-progress > div::after {
     animation: none;
   }
