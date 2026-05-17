@@ -249,11 +249,15 @@ function WalkingCharacter({ profile = "cuzi", reactionId, lane = 0 }) {
   }, [reactionId]);
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[70] h-[45vh] min-h-[230px] overflow-visible">
+    <div
+      className={`pointer-events-none fixed inset-x-0 bottom-0 h-[45vh] min-h-[230px] overflow-visible ${
+        celebrating ? "z-40" : "z-[1]"
+      }`}
+      aria-hidden="true"
+    >
       <motion.div
-        className="pointer-events-auto absolute left-0 top-0 will-change-transform"
+        className="pointer-events-none absolute left-0 top-0 will-change-transform"
         style={{ x: smoothX, y }}
-        onPointerDown={() => showThought()}
       >
         <motion.div
           className="relative"

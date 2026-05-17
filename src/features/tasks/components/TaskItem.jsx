@@ -45,7 +45,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
       whileHover={!isEditing ? { y: -2 } : undefined}
       whileTap={!isEditing ? { scale: 0.985 } : undefined}
       onClick={toggleFromCard}
-      className={`pixel-row group flex cursor-pointer items-center gap-3 px-4 py-3 transition ${
+      className={`pixel-row group flex cursor-pointer items-start gap-3 px-3 py-3 transition sm:items-center sm:px-4 ${
         task.completed ? "opacity-70" : ""
       }`}
       data-cat-zone="task"
@@ -68,7 +68,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
         </motion.span>
       </button>
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 overflow-hidden">
         <AnimatePresence mode="wait">
           {isEditing ? (
             <motion.form
@@ -77,15 +77,15 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onSubmit={saveEdit}
-            className="flex gap-2"
+              className="flex min-w-0 flex-col gap-2 sm:flex-row"
             >
               <input
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                className="focus-ring min-h-10 min-w-0 flex-1 border-2 border-[#b88947] bg-[#fff7d8] px-3 text-base outline-none"
+                className="focus-ring min-h-10 min-w-0 w-full flex-1 border-2 border-[#b88947] bg-[#fff7d8] px-3 text-base outline-none"
                 autoFocus
               />
-              <button type="submit" className="focus-ring bg-[#f0c05b] px-3 text-sm font-semibold text-[#42270f] shadow-pixel">
+              <button type="submit" className="focus-ring min-h-10 bg-[#f0c05b] px-3 text-sm font-semibold text-[#42270f] shadow-pixel">
                 Save
               </button>
             </motion.form>
@@ -97,7 +97,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
               exit={{ opacity: 0 }}
             >
               <p
-                className={`break-words text-[15px] font-bold leading-7 transition duration-300 sm:text-base ${
+                className={`max-w-full whitespace-pre-wrap break-words text-[15px] font-bold leading-6 [overflow-wrap:anywhere] transition duration-300 sm:text-base sm:leading-7 ${
                   task.completed
                     ? "text-[#94713f] line-through decoration-[#39834a] decoration-2"
                     : "text-[#2d1b0b]"

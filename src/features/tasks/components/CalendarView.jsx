@@ -57,7 +57,7 @@ function CalendarView({ tasks, selectedDate, onSelectDate }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      className="pixel-panel p-4 sm:p-5"
+      className="pixel-panel h-full p-4 sm:p-5"
       aria-label="Task calendar"
       data-cat-zone="calendar"
     >

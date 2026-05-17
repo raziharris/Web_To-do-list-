@@ -1,10 +1,13 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CalendarDays,
+  CheckCircle2,
+  Fingerprint,
   Leaf,
   LockKeyhole,
   Moon,
   Plus,
+  Sparkles,
   Sun,
   Trash2,
   X,
@@ -34,6 +37,8 @@ import {
 import EmptyState from "../shared/components/EmptyState.jsx";
 
 const PASSWORD_SESSION_KEY = "my-tasks-password-unlocked";
+const FACE_ID_CREDENTIAL_KEY = "my-tasks-face-id-credential";
+const FACE_ID_USER_KEY = "my-tasks-face-id-user";
 const REMOTE_MIGRATION_KEY = "my-tasks-remote-migrated";
 const SITE_PASSWORD_HASH = "9e468432d7dde30ef9c431eb88b6951b2928dc337b88f349a5db9d124b88bada";
 const gardenCompanions = [
@@ -106,10 +111,143 @@ async function hashPassword(password) {
     .join("");
 }
 
+function createChallenge() {
+  const challenge = new Uint8Array(32);
+  crypto.getRandomValues(challenge);
+  return challenge;
+}
+
+function arrayBufferToBase64Url(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function base64UrlToArrayBuffer(value) {
+  const paddedValue = `${value}${"=".repeat((4 - (value.length % 4)) % 4)}`;
+  const binary = atob(paddedValue.replace(/-/g, "+").replace(/_/g, "/"));
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes.buffer;
+}
+
+function getOrCreateFaceIdUser() {
+  const storedUser = localStorage.getItem(FACE_ID_USER_KEY);
+
+  if (storedUser) {
+    return base64UrlToArrayBuffer(storedUser);
+  }
+
+  const user = new Uint8Array(32);
+  crypto.getRandomValues(user);
+  localStorage.setItem(FACE_ID_USER_KEY, arrayBufferToBase64Url(user.buffer));
+
+  return user.buffer;
+}
+
+function isFaceIdReady() {
+  return Boolean(localStorage.getItem(FACE_ID_CREDENTIAL_KEY));
+}
+
+async function canUseFaceId() {
+  if (!window.isSecureContext || !("PublicKeyCredential" in window) || !navigator.credentials) {
+    return false;
+  }
+
+  if (!PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+    return true;
+  }
+
+  return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+}
+
+async function registerFaceIdCredential() {
+  const credential = await navigator.credentials.create({
+    publicKey: {
+      challenge: createChallenge(),
+      rp: { name: "My Tasks" },
+      user: {
+        id: getOrCreateFaceIdUser(),
+        name: "my-tasks",
+        displayName: "My Tasks",
+      },
+      pubKeyCredParams: [
+        { type: "public-key", alg: -7 },
+        { type: "public-key", alg: -257 },
+      ],
+      authenticatorSelection: {
+        authenticatorAttachment: "platform",
+        residentKey: "preferred",
+        userVerification: "required",
+      },
+      attestation: "none",
+      timeout: 60000,
+    },
+  });
+
+  localStorage.setItem(FACE_ID_CREDENTIAL_KEY, arrayBufferToBase64Url(credential.rawId));
+}
+
+async function unlockWithFaceId() {
+  const credentialId = localStorage.getItem(FACE_ID_CREDENTIAL_KEY);
+
+  if (!credentialId) {
+    throw new Error("Face ID is not set up yet.");
+  }
+
+  await navigator.credentials.get({
+    publicKey: {
+      challenge: createChallenge(),
+      allowCredentials: [
+        {
+          id: base64UrlToArrayBuffer(credentialId),
+          type: "public-key",
+        },
+      ],
+      userVerification: "required",
+      timeout: 60000,
+    },
+  });
+}
+
 function PasswordGate({ onUnlock }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isChecking, setIsChecking] = useState(false);
+  const [isFaceIdSupported, setIsFaceIdSupported] = useState(false);
+  const [isFaceIdRegistered, setIsFaceIdRegistered] = useState(() => isFaceIdReady());
+  const faceIdAutoTriedRef = useRef(false);
+
+  useEffect(() => {
+    canUseFaceId()
+      .then(setIsFaceIdSupported)
+      .catch(() => setIsFaceIdSupported(false));
+  }, []);
+
+  useEffect(() => {
+    if (!isFaceIdSupported || !isFaceIdRegistered || faceIdAutoTriedRef.current) {
+      return;
+    }
+
+    faceIdAutoTriedRef.current = true;
+    window.setTimeout(() => {
+      unlockWebsiteWithFaceId({ isAutomatic: true });
+    }, 350);
+  }, [isFaceIdSupported, isFaceIdRegistered]);
+
+  function unlockSession() {
+    sessionStorage.setItem(PASSWORD_SESSION_KEY, "true");
+    onUnlock();
+  }
 
   async function unlockWebsite(event) {
     event.preventDefault();
@@ -120,8 +258,16 @@ function PasswordGate({ onUnlock }) {
       const passwordHash = await hashPassword(password);
 
       if (passwordHash === SITE_PASSWORD_HASH) {
-        sessionStorage.setItem(PASSWORD_SESSION_KEY, "true");
-        onUnlock();
+        if (isFaceIdSupported && !isFaceIdRegistered) {
+          try {
+            await registerFaceIdCredential();
+            setIsFaceIdRegistered(true);
+          } catch (faceIdSetupError) {
+            console.warn("Could not set up Face ID unlock.", faceIdSetupError);
+          }
+        }
+
+        unlockSession();
         return;
       }
 
@@ -130,6 +276,25 @@ function PasswordGate({ onUnlock }) {
     } catch (unlockError) {
       console.warn("Could not check website password.", unlockError);
       setError("This browser could not check the password.");
+    } finally {
+      setIsChecking(false);
+    }
+  }
+
+  async function unlockWebsiteWithFaceId({ isAutomatic = false } = {}) {
+    setIsChecking(true);
+    setError("");
+
+    try {
+      await unlockWithFaceId();
+      unlockSession();
+    } catch (faceIdError) {
+      console.warn("Could not unlock with Face ID.", faceIdError);
+      setError(
+        isAutomatic
+          ? "Face ID could not start automatically. Use Face ID or enter password."
+          : "Face ID was cancelled or could not unlock. Enter password instead.",
+      );
     } finally {
       setIsChecking(false);
     }
@@ -160,9 +325,21 @@ function PasswordGate({ onUnlock }) {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-normal">Private Tasks</h1>
-            <p className="text-sm font-bold text-[#7a5124]">Password required</p>
+            <p className="text-sm font-bold text-[#7a5124]">Face ID or password</p>
           </div>
         </div>
+
+        {isFaceIdSupported && (
+          <button
+            type="button"
+            onClick={unlockWebsiteWithFaceId}
+            disabled={!isFaceIdRegistered || isChecking}
+            className="focus-ring mb-4 inline-flex min-h-12 w-full items-center justify-center gap-2 bg-[#2f8b45] px-5 font-bold text-[#fff7d8] shadow-pixel transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+          >
+            <Fingerprint className="h-5 w-5" aria-hidden="true" />
+            {isFaceIdRegistered ? "Use Face ID" : "Face ID available after password"}
+          </button>
+        )}
 
         <form onSubmit={unlockWebsite} className="space-y-4">
           <div className="pixel-input px-4 py-3">
@@ -434,7 +611,7 @@ function TodoApp() {
         />
       ))}
 
-      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-48px)] w-full max-w-[1250px] flex-col items-center justify-center">
+      <section className="mobile-view-scale relative z-10 mx-auto flex min-h-[calc(100vh-48px)] w-full max-w-[1250px] flex-col items-center justify-center">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
@@ -442,12 +619,51 @@ function TodoApp() {
           className="grid w-full max-w-[430px] items-stretch gap-5 sm:max-w-[560px] lg:max-w-none lg:grid-cols-[minmax(0,760px)_370px]"
         >
           <section className="pixel-panel flex h-full flex-col p-4 sm:p-6" data-cat-zone="tasks">
-            <header className="mb-5 flex items-center">
+            <header className="mb-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <Leaf className="h-7 w-7 fill-[#6a942f] text-[#244f1b]" aria-hidden="true" />
                 <h1 className="text-3xl font-bold tracking-normal sm:text-4xl">My Tasks</h1>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsDark((current) => !current)}
+                className="focus-ring grid h-11 w-11 shrink-0 place-items-center border-2 border-[#edd19a] bg-[#fff0bf] text-[#241609] transition hover:bg-[#f0c05b] sm:h-12 sm:w-12"
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {isDark ? <Sun className="h-6 w-6 sm:h-7 sm:w-7" /> : <Moon className="h-6 w-6 sm:h-7 sm:w-7" />}
+              </button>
             </header>
+
+            <section
+              className="next-task-card next-task-feature mb-5 flex gap-3 border-4 border-[#6d4320] bg-[#fff0bf] p-3 font-bold shadow-pixel"
+              aria-label="Next task"
+            >
+              <div className="grid h-12 w-12 shrink-0 place-items-center border-2 border-[#5d3a1c] bg-[#4b2b16] text-[#fff7d8] shadow-pixel">
+                {nextTask ? <Sparkles className="h-6 w-6" aria-hidden="true" /> : <CheckCircle2 className="h-6 w-6" aria-hidden="true" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <p className="text-[11px] uppercase leading-4 tracking-[0.08em] text-[#7a5124]">Next task</p>
+                  <span className="inline-flex items-center gap-1 border-2 border-[#d4a661] bg-[#fff7d8] px-2 py-0.5 text-[10px] uppercase leading-4 text-[#2f6d32]">
+                    <CalendarDays className="h-3 w-3" aria-hidden="true" />
+                    {nextTask ? taskDateFormatter.format(new Date(`${nextTask.dueDate}T00:00:00`)) : "Clear"}
+                  </span>
+                </div>
+                <p className="max-w-full break-words text-lg leading-6 text-[#241609] [overflow-wrap:anywhere]">
+                  {nextTask ? nextTask.title : "All tasks done"}
+                </p>
+                <div
+                  className="mt-3 h-2 overflow-hidden border-2 border-[#a87a3a] bg-[#dcae59]"
+                  role="progressbar"
+                  aria-label="Task completion progress"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow={progress}
+                >
+                  <div className="h-full bg-[#3d9348] transition-[width] duration-500" style={{ width: `${progress}%` }} />
+                </div>
+              </div>
+            </section>
 
             <div className="mb-5 grid gap-4 sm:grid-cols-[1fr_auto]">
               <FilterTabs filters={taskFilters} activeFilter={activeFilter} onChange={setActiveFilter} />
@@ -463,8 +679,15 @@ function TodoApp() {
             </div>
 
             <div className="flex flex-1 flex-col space-y-4">
-              <form onSubmit={addTask} className="pixel-input flex flex-wrap items-center gap-3 px-4 py-3" data-cat-zone="input">
-                <Plus className="h-7 w-7 shrink-0 text-[#9b6a2d]" aria-hidden="true" />
+              <form onSubmit={addTask} className="pixel-input add-task-input flex flex-wrap items-center gap-3 px-4 py-4 sm:px-5" data-cat-zone="input">
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  type="submit"
+                  className="focus-ring grid h-12 w-12 shrink-0 place-items-center bg-[#f0c05b] text-[#42270f] shadow-pixel transition hover:-translate-y-0.5 sm:h-14 sm:w-14"
+                  aria-label="Add task"
+                >
+                  <Plus className="h-8 w-8 sm:h-9 sm:w-9" aria-hidden="true" />
+                </motion.button>
                 <label htmlFor="task-input" className="sr-only">
                   New task
                 </label>
@@ -472,22 +695,15 @@ function TodoApp() {
                   id="task-input"
                   value={newTask}
                   onChange={(event) => setNewTask(event.target.value)}
-                  className="focus-ring min-h-10 min-w-[180px] flex-1 bg-transparent text-lg font-bold text-[#2d1b0b] outline-none placeholder:text-[#9c7847]"
+                  className="focus-ring min-h-12 min-w-0 flex-[1_1_220px] bg-transparent text-lg font-bold leading-7 text-[#2d1b0b] outline-none placeholder:text-[#9c7847] sm:min-h-14 sm:text-xl"
                   placeholder="Add a new task..."
                   maxLength={120}
                   autoComplete="off"
                 />
-                <span className="inline-flex min-h-10 items-center gap-2 px-2 text-xs font-bold uppercase tracking-[0.08em] text-[#7a5124]">
+                <span className="inline-flex min-h-10 min-w-0 items-center gap-2 px-2 text-xs font-bold uppercase tracking-[0.08em] text-[#7a5124] sm:min-h-12">
                   <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-                  {taskDateFormatter.format(new Date(`${selectedDate}T00:00:00`))}
+                  <span className="truncate">{taskDateFormatter.format(new Date(`${selectedDate}T00:00:00`))}</span>
                 </span>
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  type="submit"
-                  className="focus-ring hidden min-h-10 items-center justify-center bg-[#f0c05b] px-4 font-bold text-[#42270f] shadow-pixel transition hover:-translate-y-0.5 sm:inline-flex"
-                >
-                  Add
-                </motion.button>
               </form>
 
               {filteredTasks.length > 0 ? (
@@ -512,30 +728,7 @@ function TodoApp() {
             </div>
           </section>
 
-          <aside className="mx-auto w-full max-w-[430px] space-y-4 lg:max-w-none">
-            <div className="pixel-profile flex items-center gap-3 p-3" data-cat-zone="profile">
-              <div className="grid h-12 w-12 shrink-0 place-items-center bg-[#2f8b45] text-xs font-black leading-none text-[#fff7d8] shadow-pixel">
-                NEXT
-              </div>
-              <div className="min-w-0 flex-1 border-2 border-[#edd19a] bg-[#fff0bf] px-4 py-2 font-bold">
-                <p className="text-xs uppercase leading-4 text-[#7a5124]">Next task</p>
-                <p className="truncate text-sm leading-5 text-[#241609]">
-                  {nextTask ? nextTask.title : "All tasks done"}
-                </p>
-                <p className="text-xs leading-4 text-[#7a5124]">
-                  {nextTask ? `${taskDateFormatter.format(new Date(`${nextTask.dueDate}T00:00:00`))} • ${nextTask.time || "Anytime"}` : "Enjoy the quiet list"}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsDark((current) => !current)}
-                className="focus-ring grid h-12 w-12 place-items-center border-2 border-[#edd19a] bg-[#fff0bf] text-[#241609] transition hover:bg-[#f0c05b]"
-                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {isDark ? <Sun className="h-7 w-7" /> : <Moon className="h-7 w-7" />}
-              </button>
-            </div>
-
+          <aside className="mx-auto w-full max-w-none space-y-4 lg:max-w-none">
             <CalendarView tasks={tasks} selectedDate={selectedDate} onSelectDate={selectCalendarDate} />
             <ProgressCard completed={completedCount} total={tasks.length} progress={progress} />
 

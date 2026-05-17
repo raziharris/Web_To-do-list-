@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 
 function ProgressCard({ completed, total, progress }) {
   return (
-    <section className="pixel-panel p-5" aria-label="Task progress" data-cat-zone="progress">
+    <section className="pixel-panel h-full p-5" aria-label="Task progress" data-cat-zone="progress">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-[#241609]">Progress</h2>
