@@ -1,6 +1,15 @@
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+
+const PROGRESS_NOTE_KEY = "my-tasks-progress-note";
 
 function ProgressCard({ completed, total, progress }) {
+  const [note, setNote] = useState(() => localStorage.getItem(PROGRESS_NOTE_KEY) || "");
+
+  useEffect(() => {
+    localStorage.setItem(PROGRESS_NOTE_KEY, note);
+  }, [note]);
+
   return (
     <section className="pixel-panel p-4" aria-label="Task progress" data-cat-zone="progress">
       <div className="mb-3 flex items-center justify-between gap-4">
@@ -21,6 +30,20 @@ function ProgressCard({ completed, total, progress }) {
           initial={false}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.45, ease: "easeOut" }}
+        />
+      </div>
+
+      <div className="mt-4">
+        <label htmlFor="progress-note" className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-[#7a5124]">
+          Note
+        </label>
+        <textarea
+          id="progress-note"
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          className="focus-ring min-h-[45vh] w-full resize-y border-2 border-[#a87a3a] bg-[#fff9e8] px-3 py-2 text-sm font-semibold leading-6 text-[#2d1b0b] shadow-pixel outline-none placeholder:text-[#9c7847] sm:min-h-[50vh] lg:min-h-[420px]"
+          placeholder="Write your note here..."
+          maxLength={500}
         />
       </div>
     </section>

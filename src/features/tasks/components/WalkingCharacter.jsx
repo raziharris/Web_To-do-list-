@@ -280,7 +280,7 @@ function WalkingCharacter({ profile = "cuzi", reactionId, lane = 0 }) {
           }
           transition={{ duration: celebrating ? 1.25 : isWalking ? stepDuration : 1.7, ease: "easeInOut", repeat: isWalking || !celebrating ? Infinity : 0 }}
           style={{ width: size, height: size * 0.72 }}
-          aria-label={`${cat.name} cat companion`}
+          aria-label="Cat companion"
           role="img"
         >
           <motion.span
@@ -289,13 +289,18 @@ function WalkingCharacter({ profile = "cuzi", reactionId, lane = 0 }) {
             transition={{ duration: isWalking ? stepDuration : 1.8, ease: "easeInOut", repeat: Infinity }}
           />
 
-          <img
-            src={spriteSrc}
-            alt=""
-            draggable="false"
-            className="absolute inset-0 h-full w-full object-contain drop-shadow-[0_5px_0_rgba(15,23,42,0.10)]"
-            style={{ imageRendering: "pixelated", filter: cat.tint, transform: `scaleX(${direction}) scale(${celebrating ? 1.34 : 1.22})`, transformOrigin: "center bottom" }}
-          />
+          <span
+            className="cat-sprite-window absolute inset-0"
+            style={{ transform: `scaleX(${direction}) scale(${celebrating ? 1.34 : 1.22})`, transformOrigin: "center bottom" }}
+          >
+            <img
+              src={spriteSrc}
+              alt=""
+              draggable="false"
+              className="cat-sprite-image absolute object-contain drop-shadow-[0_5px_0_rgba(15,23,42,0.10)]"
+              style={{ imageRendering: "pixelated", filter: cat.tint }}
+            />
+          </span>
 
           {cat.accessory === "bow" && (
             <span className="absolute left-[56%] top-[4%] h-[12%] w-[22%] rotate-12">
@@ -308,10 +313,6 @@ function WalkingCharacter({ profile = "cuzi", reactionId, lane = 0 }) {
           {cat.accessory === "bandana" && (
             <span className="absolute left-[43%] top-[58%] h-[10%] w-[22%] bg-sky-500 shadow-[2px_2px_0_rgba(61,48,40,0.22)]" />
           )}
-
-          <span className="absolute left-[22%] top-[82%] border-2 border-[#3d3028] bg-[#fff1c7] px-2 py-0.5 text-[10px] font-black leading-none text-[#8b4a25] shadow-[3px_3px_0_rgba(61,48,40,0.18)]">
-            {cat.name}
-          </span>
 
           <AnimatePresence>
             {celebrating && (

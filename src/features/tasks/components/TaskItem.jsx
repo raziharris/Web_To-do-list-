@@ -20,6 +20,7 @@ function formatTaskDate(dateKey) {
 function TaskItem({ task, onToggle, onDelete, onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
+  const [dragHint, setDragHint] = useState(null);
 
   function saveEdit(event) {
     event.preventDefault();
@@ -35,21 +36,61 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
     onToggle(task.id);
   }
 
+  function handleDragEnd(_event, info) {
+    setDragHint(null);
+
+    if (isEditing) {
+      return;
+    }
+
+    if (info.offset.x > 72) {
+      onToggle(task.id);
+      return;
+    }
+
+    if (info.offset.x < -72) {
+      setDraft(task.title);
+      setIsEditing(true);
+    }
+  }
+
   return (
-    <motion.article
-      layout
-      initial={{ opacity: 0, y: 12, scale: 0.98 }}
-      animate={{ opacity: task.completed ? 0.72 : 1, y: 0, scale: task.completed ? 0.985 : 1 }}
-      exit={{ opacity: 0, x: -18, scale: 0.98 }}
-      transition={{ duration: 0.22, type: "spring", stiffness: 420, damping: 28 }}
-      whileHover={!isEditing ? { y: -2 } : undefined}
-      whileTap={!isEditing ? { scale: 0.985 } : undefined}
-      onClick={toggleFromCard}
-      className={`pixel-row group relative flex cursor-pointer items-start gap-3 overflow-hidden px-3 py-3 transition sm:items-center sm:px-4 ${
-        task.completed ? "task-complete opacity-70" : "task-active"
-      }`}
-      data-cat-zone="task"
-    >
+    <motion.div layout className="task-swipe-shell relative">
+      <div className="task-swipe-rail absolute inset-0 hidden items-center justify-between px-4 sm:hidden" aria-hidden="true">
+        <span className={`task-swipe-chip ${dragHint === "toggle" ? "is-visible" : ""}`}>
+          <Check className="h-4 w-4" />
+        </span>
+        <span className={`task-swipe-chip ${dragHint === "edit" ? "is-visible" : ""}`}>
+          <Pencil className="h-4 w-4" />
+        </span>
+      </div>
+      <motion.article
+        layout
+        drag={!isEditing ? "x" : false}
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.18}
+        onDrag={(_event, info) => {
+          if (info.offset.x > 24) {
+            setDragHint("toggle");
+          } else if (info.offset.x < -24) {
+            setDragHint("edit");
+          } else {
+            setDragHint(null);
+          }
+        }}
+        onDragEnd={handleDragEnd}
+        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+        animate={{ opacity: task.completed ? 0.72 : 1, y: 0, scale: task.completed ? 0.985 : 1 }}
+        exit={{ opacity: 0, x: -18, scale: 0.98 }}
+        transition={{ duration: 0.22, type: "spring", stiffness: 420, damping: 28 }}
+        whileHover={!isEditing ? { y: -2 } : undefined}
+        whileTap={!isEditing ? { scale: 0.985 } : undefined}
+        onClick={toggleFromCard}
+        className={`pixel-row group relative flex cursor-pointer touch-pan-y items-start gap-3 overflow-hidden px-3 py-3 transition sm:items-center sm:px-4 ${
+          task.completed ? "task-complete opacity-70" : "task-active"
+        }`}
+        data-cat-zone="task"
+      >
       <button
         type="button"
         onClick={() => onToggle(task.id)}
@@ -138,7 +179,8 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
           <Trash2 className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
-    </motion.article>
+      </motion.article>
+    </motion.div>
   );
 }
 

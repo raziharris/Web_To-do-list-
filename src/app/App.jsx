@@ -1,8 +1,10 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  BarChart3,
   CalendarDays,
   CheckCircle2,
   Fingerprint,
+  ListTodo,
   LockKeyhole,
   Moon,
   Plus,
@@ -45,8 +47,27 @@ const gardenCompanions = [
   { id: "cuzi", profile: "cuzi" },
   { id: "cunim", profile: "cunim" },
 ];
+const mobilePanels = [
+  { id: "Tasks", label: "Tasks", icon: ListTodo },
+  { id: "Calendar", label: "Calendar", icon: CalendarDays },
+  { id: "Progress", label: "Progress", icon: BarChart3 },
+];
+const SKY_CLOUD_COUNT = 9;
 
 const taskDateFormatter = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" });
+const malaysiaHeaderDateFormatter = new Intl.DateTimeFormat("en-MY", {
+  timeZone: MALAYSIA_TIME_ZONE,
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
+const malaysiaHeaderTimeFormatter = new Intl.DateTimeFormat("en-MY", {
+  timeZone: MALAYSIA_TIME_ZONE,
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
 
 function getTaskDateValue(task) {
   if (task.dueDate) {
@@ -130,6 +151,17 @@ function getMalaysiaSkyState(date = new Date()) {
     skyX: isDark ? 88 - 76 * cycleMinutes : 12 + 76 * cycleMinutes,
     skyY: 24 - 15 * arc,
   };
+}
+
+function createSkyClouds() {
+  return Array.from({ length: SKY_CLOUD_COUNT }, (_, index) => ({
+    id: `cloud-${index}`,
+    top: 7 + Math.random() * 28,
+    scale: 0.58 + Math.random() * 0.72,
+    duration: 34 + Math.random() * 34,
+    delay: -(Math.random() * 38),
+    opacity: 0.28 + Math.random() * 0.36,
+  }));
 }
 
 async function hashPassword(password) {
@@ -407,16 +439,20 @@ function TodoApp() {
   const [tasks, setTasks] = useState(() => loadTasks());
   const [newTask, setNewTask] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
-  const [activePanel, setActivePanel] = useState("Progress");
+  const [activePanel, setActivePanel] = useState("Tasks");
   const [selectedDate, setSelectedDate] = useState(formatDateKey());
   const [isRemoteReady, setIsRemoteReady] = useState(!isSupabaseConfigured);
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [activeReactionTaskId, setActiveReactionTaskId] = useState(null);
   const [skyState, setSkyState] = useState(() => getMalaysiaSkyState());
+  const [currentMalaysiaTime, setCurrentMalaysiaTime] = useState(() => new Date());
   const [themeOverride, setThemeOverride] = useState(null);
   const applyingRemoteTasksRef = useRef(false);
   const characterSafeSpace = 132;
   const isDark = themeOverride ?? skyState.isDark;
+  const malaysiaDateLabel = malaysiaHeaderDateFormatter.format(currentMalaysiaTime);
+  const malaysiaTimeLabel = malaysiaHeaderTimeFormatter.format(currentMalaysiaTime);
+  const skyClouds = useMemo(() => createSkyClouds(), []);
 
   const completedCount = tasks.filter((task) => task.completed).length;
   const pendingCount = tasks.length - completedCount;
@@ -431,6 +467,9 @@ function TodoApp() {
           (firstTask.createdAt || 0) - (secondTask.createdAt || 0),
       )[0];
   }, [tasks]);
+  const selectedDateTaskCount = useMemo(() => {
+    return tasks.filter((task) => task.dueDate === selectedDate).length;
+  }, [selectedDate, tasks]);
 
   const filteredTasks = useMemo(() => {
     let visibleTasks = tasks;
@@ -538,6 +577,17 @@ function TodoApp() {
     document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
 
+  useEffect(() => {
+    function syncMalaysiaTime() {
+      setCurrentMalaysiaTime(new Date());
+    }
+
+    syncMalaysiaTime();
+    const malaysiaTimeTimerId = window.setInterval(syncMalaysiaTime, 1000);
+
+    return () => window.clearInterval(malaysiaTimeTimerId);
+  }, []);
+
   function toggleTheme() {
     setThemeOverride((currentOverride) => !(currentOverride ?? skyState.isDark));
   }
@@ -571,6 +621,7 @@ function TodoApp() {
     ]);
     setNewTask("");
     setActiveFilter("All");
+    setActivePanel("Tasks");
   }
 
   function toggleTask(taskId) {
@@ -625,6 +676,7 @@ function TodoApp() {
 
   function selectCalendarDate(dateKey) {
     setSelectedDate(dateKey);
+    setActivePanel("Tasks");
   }
 
   return (
@@ -639,6 +691,19 @@ function TodoApp() {
       <div className="pixel-sky" aria-hidden="true">
         <span className="cloud cloud-left" />
         <span className="cloud cloud-right" />
+        {skyClouds.map((cloud) => (
+          <span
+            key={cloud.id}
+            className="cloud cloud-random"
+            style={{
+              "--cloud-top": `${cloud.top}%`,
+              "--cloud-scale": cloud.scale,
+              "--cloud-duration": `${cloud.duration}s`,
+              "--cloud-delay": `${cloud.delay}s`,
+              "--cloud-opacity": cloud.opacity,
+            }}
+          />
+        ))}
       </div>
       <div className="pixel-hills" aria-hidden="true" />
       <div className="pixel-garden" aria-hidden="true">
@@ -664,13 +729,57 @@ function TodoApp() {
       ))}
 
       <section className="mobile-view-scale relative z-10 mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-[1250px] flex-col items-center justify-start">
+        <div className="malaysia-time-bar mb-4 flex w-full max-w-[430px] items-center gap-3 px-4 py-3 text-[#3b2410] sm:max-w-[560px] lg:max-w-none">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-lg font-bold leading-6 text-[#241609] sm:text-xl">
+              {malaysiaDateLabel}
+            </p>
+          </div>
+          <time className="malaysia-time-pill shrink-0 border-2 px-2 py-1 text-sm font-bold uppercase sm:px-3 sm:text-base">
+            {malaysiaTimeLabel}
+          </time>
+        </div>
+
+        <nav className="mobile-panel-dock sticky top-3 z-30 mb-4 grid w-full max-w-[430px] grid-cols-3 gap-2 lg:hidden" aria-label="Mobile task panels">
+          {mobilePanels.map(({ id, label, icon: Icon }) => {
+            const isActivePanel = activePanel === id;
+            const badge = id === "Tasks" ? filteredTasks.length : id === "Calendar" ? selectedDateTaskCount : `${progress}%`;
+
+            return (
+              <motion.button
+                key={id}
+                type="button"
+                onClick={() => setActivePanel(id)}
+                whileTap={{ scale: 0.94 }}
+                className={`focus-ring mobile-panel-tab relative min-h-14 overflow-hidden border-2 px-2 text-xs font-bold uppercase text-[#3b2410] shadow-pixel transition ${
+                  isActivePanel
+                    ? "border-[#5c3921] bg-[#f0c05b]"
+                    : "border-[#b88947] bg-[#fff9e8]/90 hover:bg-[#fff0bf]"
+                }`}
+                aria-current={isActivePanel ? "page" : undefined}
+              >
+                <span className="relative z-10 grid h-full w-full grid-rows-[20px_16px_18px] place-items-center gap-1">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                  <span className="leading-4">{label}</span>
+                  <span className="mobile-panel-badge">{badge}</span>
+                </span>
+              </motion.button>
+            );
+          })}
+        </nav>
+
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: "easeOut" }}
           className="grid w-full max-w-[430px] items-stretch gap-5 sm:max-w-[560px] lg:max-w-none lg:grid-cols-[minmax(0,760px)_370px]"
         >
-          <section className="pixel-panel flex h-full flex-col p-4 sm:p-6" data-cat-zone="tasks">
+          <section
+            className={`pixel-panel h-full flex-col p-4 sm:p-6 lg:flex ${
+              activePanel === "Tasks" ? "flex" : "hidden"
+            }`}
+            data-cat-zone="tasks"
+          >
             <header className="app-header mb-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center">
@@ -705,7 +814,7 @@ function TodoApp() {
             </header>
 
             <section
-              className="next-task-card next-task-feature mb-5 flex gap-3 border-4 border-[#6d4320] bg-[#fff0bf] p-3 font-bold shadow-pixel"
+              className="next-task-card next-task-feature today-card-modern mb-5 flex gap-3 border-4 border-[#6d4320] bg-[#fff0bf] p-3 font-bold shadow-pixel"
               aria-label="Next task"
             >
               <div className="grid h-12 w-12 shrink-0 place-items-center border-2 border-[#5d3a1c] bg-[#4b2b16] text-[#fff7d8] shadow-pixel">
@@ -788,9 +897,13 @@ function TodoApp() {
             </div>
           </section>
 
-          <aside className="mx-auto w-full max-w-none space-y-4 lg:max-w-none">
-            <CalendarView tasks={tasks} selectedDate={selectedDate} onSelectDate={selectCalendarDate} />
-            <ProgressCard completed={completedCount} total={tasks.length} progress={progress} />
+          <aside className={`mx-auto w-full max-w-none space-y-4 lg:block lg:max-w-none ${activePanel === "Tasks" ? "hidden" : "block"}`}>
+            <div className={activePanel === "Calendar" ? "block" : "hidden lg:block"}>
+              <CalendarView tasks={tasks} selectedDate={selectedDate} onSelectDate={selectCalendarDate} />
+            </div>
+            <div className={activePanel === "Progress" ? "block" : "hidden lg:block"}>
+              <ProgressCard completed={completedCount} total={tasks.length} progress={progress} />
+            </div>
 
           </aside>
         </motion.div>
