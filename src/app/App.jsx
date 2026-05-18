@@ -681,9 +681,9 @@ function TodoApp() {
 
   return (
     <main
-      className="pixel-world relative min-h-screen overflow-hidden px-4 pt-24 text-[#241609] sm:px-6 sm:pt-28 lg:px-8 lg:pt-32"
+      className="app-shell pixel-world relative min-h-screen overflow-hidden px-4 pt-24 text-[#241609] sm:px-6 sm:pt-28 lg:px-8 lg:pt-32"
       style={{
-        paddingBottom: characterSafeSpace + 32,
+        paddingBottom: `calc(${characterSafeSpace + 48}px + env(safe-area-inset-bottom, 0px))`,
         "--sky-body-x": `${skyState.skyX}%`,
         "--sky-body-y": `${skyState.skyY}%`,
       }}

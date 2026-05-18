@@ -1101,8 +1101,14 @@ button {
     overscroll-behavior-y: contain;
   }
 
-  .pixel-world {
-    padding-inline: 10px;
+  .app-shell {
+    padding-top: max(6.75rem, calc(env(safe-area-inset-top, 0px) + 5.5rem));
+    padding-right: max(22px, calc(env(safe-area-inset-right, 0px) + 20px));
+    padding-left: max(22px, calc(env(safe-area-inset-left, 0px) + 20px));
+  }
+
+  .mobile-view-scale {
+    min-height: calc(100svh - 128px);
   }
 
   .pixel-panel {
