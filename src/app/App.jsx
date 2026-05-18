@@ -759,7 +759,9 @@ function TodoApp() {
                 aria-current={isActivePanel ? "page" : undefined}
               >
                 <span className="relative z-10 grid h-full w-full grid-rows-[20px_16px_18px] place-items-center gap-1">
-                  <Icon className="h-5 w-5" aria-hidden="true" />
+                  <span className="mobile-panel-icon">
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                  </span>
                   <span className="leading-4">{label}</span>
                   <span className="mobile-panel-badge">{badge}</span>
                 </span>

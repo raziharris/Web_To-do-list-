@@ -214,6 +214,31 @@ button {
     opacity: 1;
   }
 
+  .mobile-panel-icon {
+    display: inline-grid;
+    height: 24px;
+    width: 24px;
+    place-items: center;
+    border: 2px solid rgba(92, 57, 33, 0.38);
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.7) 0 4px, transparent 5px),
+      rgba(255, 247, 216, 0.78);
+    color: #4f7f3a;
+    box-shadow:
+      0 2px 0 rgba(92, 57, 33, 0.18),
+      inset 0 -2px 0 rgba(240, 192, 91, 0.24);
+  }
+
+  .mobile-panel-tab[aria-current="page"] .mobile-panel-icon {
+    border-color: rgba(92, 57, 33, 0.54);
+    background:
+      radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.78) 0 4px, transparent 5px),
+      #fff0bf;
+    color: #2f8b45;
+    transform: translateY(-1px);
+  }
+
   .mobile-panel-badge {
     display: inline-grid;
     min-width: 28px;
