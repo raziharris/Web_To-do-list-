@@ -227,35 +227,35 @@ button {
   }
 
   .malaysia-time-bar {
-    border: 3px solid rgba(92, 57, 33, 0.82);
+    border: 2px solid rgba(92, 57, 33, 0.34);
     background:
-      linear-gradient(135deg, rgba(255, 249, 232, 0.5), transparent 54%),
-      rgba(255, 244, 210, 0.58);
+      linear-gradient(135deg, rgba(255, 249, 232, 0.24), transparent 58%),
+      rgba(255, 244, 210, 0.26);
     box-shadow:
-      0 0 0 2px rgba(255, 249, 232, 0.26) inset,
-      4px 4px 0 rgba(61, 34, 13, 0.32);
-    backdrop-filter: blur(5px);
+      0 0 0 1px rgba(255, 249, 232, 0.16) inset,
+      3px 3px 0 rgba(61, 34, 13, 0.14);
+    backdrop-filter: blur(3px);
   }
 
   .malaysia-time-pill {
-    border-color: rgba(185, 138, 82, 0.58);
-    background: rgba(255, 247, 216, 0.58);
+    border-color: rgba(185, 138, 82, 0.3);
+    background: rgba(255, 247, 216, 0.28);
     color: #2f6d32;
   }
 
   .dark .malaysia-time-bar {
-    border-color: rgba(255, 222, 156, 0.54);
+    border-color: rgba(255, 222, 156, 0.3);
     background:
-      linear-gradient(135deg, rgba(255, 231, 172, 0.32), transparent 54%),
-      rgba(58, 39, 55, 0.5);
+      linear-gradient(135deg, rgba(255, 231, 172, 0.18), transparent 58%),
+      rgba(58, 39, 55, 0.26);
     box-shadow:
-      0 0 0 2px rgba(255, 237, 182, 0.18) inset,
-      4px 4px 0 rgba(45, 27, 18, 0.38);
+      0 0 0 1px rgba(255, 237, 182, 0.12) inset,
+      3px 3px 0 rgba(45, 27, 18, 0.18);
   }
 
   .dark .malaysia-time-pill {
-    border-color: rgba(255, 222, 156, 0.5);
-    background: rgba(255, 231, 172, 0.48);
+    border-color: rgba(255, 222, 156, 0.28);
+    background: rgba(255, 231, 172, 0.24);
     color: #285c34;
   }
 
