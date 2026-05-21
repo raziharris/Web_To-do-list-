@@ -1,11 +1,15 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Pencil, Trash2, X } from "lucide-react";
+import { CalendarDays, Check, Pencil, Trash2, X } from "lucide-react";
 import { useState } from "react";
 
 const taskDateFormatter = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
   month: "long",
   year: "numeric",
+});
+const compactTaskDateFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
 });
 
 function formatTaskDate(dateKey) {
@@ -15,6 +19,37 @@ function formatTaskDate(dateKey) {
 
   const [year, month, day] = dateKey.split("-").map(Number);
   return taskDateFormatter.format(new Date(year, month - 1, day));
+}
+
+function getDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatTaskDateLabel(dateKey) {
+  if (!dateKey) {
+    return "No date";
+  }
+
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const taskDate = new Date(year, month - 1, day);
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const shortDate = compactTaskDateFormatter.format(taskDate);
+
+  if (dateKey === getDateKey(today)) {
+    return `Today · ${shortDate}`;
+  }
+
+  if (dateKey === getDateKey(tomorrow)) {
+    return `Tomorrow · ${shortDate}`;
+  }
+
+  return `Later · ${shortDate}`;
 }
 
 function TaskItem({ task, onToggle, onDelete, onEdit }) {
@@ -146,16 +181,17 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
               >
                 {task.title}
               </p>
-              <span className="task-date-chip mt-1 inline-flex border-2 px-2 py-0.5 text-[10px] font-bold uppercase leading-4 sm:hidden">
-                {formatTaskDate(task.dueDate)}
+              <span className="task-date-chip mt-1 inline-flex items-center gap-1 border-2 px-1.5 py-0.5 text-[9px] font-bold uppercase leading-3 sm:hidden" title={formatTaskDate(task.dueDate)}>
+                <CalendarDays className="h-3 w-3" aria-hidden="true" />
+                {formatTaskDateLabel(task.dueDate)}
               </span>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      <span className="task-date-text hidden min-w-[112px] text-right text-sm font-bold sm:inline-block">
-        {formatTaskDate(task.dueDate)}
+      <span className="task-date-text hidden min-w-[96px] text-right text-xs font-bold sm:inline-block" title={formatTaskDate(task.dueDate)}>
+        {formatTaskDateLabel(task.dueDate)}
       </span>
 
       <div className="flex shrink-0 items-center gap-1">

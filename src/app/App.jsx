@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  BarChart3,
   BellRing,
   CalendarDays,
+  Clock3,
   CheckCircle2,
   Fingerprint,
   ListTodo,
@@ -18,7 +18,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import CalendarView from "../features/tasks/components/CalendarView.jsx";
 import FilterTabs from "../features/tasks/components/FilterTabs.jsx";
 import PixelBirds from "../features/tasks/components/PixelBirds.jsx";
-import ProgressCard from "../features/tasks/components/ProgressCard.jsx";
 import TaskItem from "../features/tasks/components/TaskItem.jsx";
 import WalkingCharacter from "../features/tasks/components/WalkingCharacter.jsx";
 import { taskFilters } from "../features/tasks/constants/taskFilters.js";
@@ -53,11 +52,12 @@ const gardenCompanions = [
 const mobilePanels = [
   { id: "Tasks", label: "Tasks", icon: ListTodo },
   { id: "Calendar", label: "Calendar", icon: CalendarDays },
-  { id: "Progress", label: "Progress", icon: BarChart3 },
+  { id: "Upcoming", label: "Upcoming", icon: Clock3 },
 ];
 const SKY_CLOUD_COUNT = 9;
 
 const taskDateFormatter = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" });
+const shortTaskDateFormatter = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
 const malaysiaHeaderDateFormatter = new Intl.DateTimeFormat("en-MY", {
   timeZone: MALAYSIA_TIME_ZONE,
   weekday: "long",
@@ -99,6 +99,17 @@ function getTaskTimeValue(task) {
   return (hour + (meridiem.toUpperCase() === "PM" ? 12 : 0)) * 60 + minute;
 }
 
+function parseDateKey(dateKey) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function addDays(date, days) {
+  const nextDate = new Date(date);
+  nextDate.setDate(date.getDate() + days);
+  return nextDate;
+}
+
 function sortTasksByStatusAndDate(taskList) {
   return [...taskList].sort((firstTask, secondTask) => {
     if (firstTask.completed !== secondTask.completed) {
@@ -107,6 +118,50 @@ function sortTasksByStatusAndDate(taskList) {
 
     return getTaskDateValue(firstTask) - getTaskDateValue(secondTask) || (firstTask.createdAt || 0) - (secondTask.createdAt || 0);
   });
+}
+
+function createUpcomingGroups(tasks, date = new Date()) {
+  const today = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const todayKey = formatDateKey(today);
+  const tomorrowKey = formatDateKey(addDays(today, 1));
+  const weekEnd = addDays(today, 7);
+  const groups = [
+    { id: "overdue", title: "Overdue", tasks: [] },
+    { id: "today", title: "Today", tasks: [] },
+    { id: "tomorrow", title: "Tomorrow", tasks: [] },
+    { id: "week", title: "This Week", tasks: [] },
+    { id: "later", title: "Later", tasks: [] },
+  ];
+  const groupsById = new Map(groups.map((group) => [group.id, group]));
+
+  sortTasksByStatusAndDate(tasks.filter((task) => !task.completed)).forEach((task) => {
+    const dueDateKey = task.dueDate || todayKey;
+    const taskDate = parseDateKey(dueDateKey);
+
+    if (dueDateKey < todayKey) {
+      groupsById.get("overdue").tasks.push(task);
+      return;
+    }
+
+    if (dueDateKey === todayKey) {
+      groupsById.get("today").tasks.push(task);
+      return;
+    }
+
+    if (dueDateKey === tomorrowKey) {
+      groupsById.get("tomorrow").tasks.push(task);
+      return;
+    }
+
+    if (taskDate <= weekEnd) {
+      groupsById.get("week").tasks.push(task);
+      return;
+    }
+
+    groupsById.get("later").tasks.push(task);
+  });
+
+  return groups.filter((group) => group.tasks.length > 0 || group.id !== "overdue");
 }
 
 function mergeTasks(remoteTasks, localTasks) {
@@ -481,6 +536,67 @@ function PasswordGate({ onUnlock }) {
   );
 }
 
+function UpcomingPanel({ groups, onSelectDate }) {
+  const pendingCount = groups.reduce((count, group) => count + group.tasks.length, 0);
+
+  return (
+    <section className="pixel-panel upcoming-panel p-4" aria-label="Upcoming tasks" data-cat-zone="upcoming">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold leading-6 text-[#241609]">Upcoming</h2>
+          <p className="mt-1 text-xs font-bold uppercase tracking-[0.08em] text-[#7a5124]">
+            {pendingCount} pending
+          </p>
+        </div>
+        <span className="grid h-10 w-10 shrink-0 place-items-center border-2 border-[#93b56f] bg-[#fffdf1] text-[#49623a] shadow-pixel">
+          <Clock3 className="h-5 w-5" aria-hidden="true" />
+        </span>
+      </div>
+
+      {pendingCount === 0 ? (
+        <div className="upcoming-empty border-2 p-4 text-center text-sm font-bold text-[#657748] shadow-pixel">
+          Nothing coming up.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {groups.map((group) => (
+            <section key={group.id} className="upcoming-group border-2 p-3 shadow-pixel" aria-label={`${group.title} tasks`}>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <h3 className="text-xs font-bold uppercase tracking-[0.08em] text-[#49623a]">{group.title}</h3>
+                <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#7a5124]">
+                  {group.tasks.length}
+                </span>
+              </div>
+              <div className="space-y-2">
+                {group.tasks.map((task) => {
+                  const dueDateKey = task.dueDate || formatDateKey();
+                  const taskDate = parseDateKey(dueDateKey);
+
+                  return (
+                    <button
+                      key={task.id}
+                      type="button"
+                      onClick={() => onSelectDate(dueDateKey)}
+                      className="upcoming-task focus-ring flex w-full items-start gap-2 border-2 px-2 py-2 text-left shadow-pixel transition hover:-translate-y-0.5"
+                    >
+                      <span className="upcoming-task-date shrink-0 border-2 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-4">
+                        {shortTaskDateFormatter.format(taskDate)}
+                      </span>
+                      <span className="min-w-0 flex-1 break-words text-sm font-bold leading-5 text-[#241609]">
+                        {task.title}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function TodoApp() {
   const [tasks, setTasks] = useState(() => loadTasks());
   const [newTask, setNewTask] = useState("");
@@ -526,9 +642,7 @@ function TodoApp() {
           (firstTask.createdAt || 0) - (secondTask.createdAt || 0),
       )[0];
   }, [tasks]);
-  const selectedDateTaskCount = useMemo(() => {
-    return tasks.filter((task) => task.dueDate === selectedDate).length;
-  }, [selectedDate, tasks]);
+  const upcomingGroups = useMemo(() => createUpcomingGroups(tasks, currentMalaysiaTime), [currentMalaysiaTime, tasks]);
   const notificationButtonLabel =
     notificationPermission === "unsupported"
       ? "Off"
@@ -536,7 +650,7 @@ function TodoApp() {
         ? "Blocked"
         : taskNotificationsEnabled
           ? "On"
-          : "Turn on";
+          : "Allow";
 
   const filteredTasks = useMemo(() => {
     let visibleTasks = tasks;
@@ -864,6 +978,21 @@ function TodoApp() {
       </div>
       <PixelBirds />
 
+      <button
+        type="button"
+        onClick={enableTaskNotifications}
+        disabled={notificationPermission === "unsupported"}
+        className="focus-ring notification-toggle notification-toggle-floating inline-flex min-h-8 min-w-[54px] items-center justify-center gap-1 border-2 px-2 text-[10px] font-bold uppercase shadow-pixel transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:shadow-pixel"
+        aria-label={
+          notificationPermission === "granted"
+            ? "Task completion notifications are on"
+            : "Enable task completion notifications"
+        }
+      >
+        <BellRing className="h-3.5 w-3.5" aria-hidden="true" />
+        <span>{notificationButtonLabel}</span>
+      </button>
+
       {gardenCompanions.map((cat, index) => (
         <WalkingCharacter
           key={cat.id}
@@ -873,38 +1002,36 @@ function TodoApp() {
         />
       ))}
 
-      <section className="mobile-view-scale relative z-10 mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-[1250px] flex-col items-center justify-start">
-        <div className="malaysia-time-bar mb-4 flex w-full max-w-[430px] items-center gap-3 px-4 py-3 text-[#3b2410] sm:max-w-[560px] lg:max-w-none">
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-lg font-bold leading-6 text-[#241609] sm:text-xl">
+      <section className="mobile-view-scale relative z-10 mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-[430px] flex-col items-center justify-start">
+        <div className="malaysia-time-bar today-summary-card mb-3 flex w-full max-w-[430px] flex-col gap-2 px-3 py-2.5 text-[#3b2410]">
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <p className="min-w-0 flex-1 text-[13px] font-bold leading-5 text-[#241609] sm:text-sm">
               {malaysiaDateLabel}
             </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={enableTaskNotifications}
-              disabled={notificationPermission === "unsupported"}
-              className="focus-ring inline-flex min-h-10 min-w-[82px] items-center justify-center gap-1.5 border-2 border-[#74a85d] bg-[#fffdf1] px-3 text-[11px] font-bold uppercase text-[#3d6d37] shadow-pixel transition hover:-translate-y-0.5 hover:bg-[#edf4c9] active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0 disabled:active:shadow-pixel"
-              aria-label={
-                notificationPermission === "granted"
-                  ? "Task completion notifications are on"
-                  : "Enable task completion notifications"
-              }
-            >
-              <BellRing className="h-4 w-4" aria-hidden="true" />
-              <span>{notificationButtonLabel}</span>
-            </button>
-            <time className="malaysia-time-pill shrink-0 border-2 px-2 py-1 text-sm font-bold uppercase sm:px-3 sm:text-base">
+            <time className="malaysia-time-pill shrink-0 border-2 px-2 py-1 text-xs font-bold uppercase">
               {malaysiaTimeLabel}
             </time>
           </div>
+          <div className="flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-[0.08em] text-[#657748]">
+            <span>{tasks.length} tasks</span>
+            <span>{completedCount} done</span>
+            <span>{pendingCount} left</span>
+          </div>
+          <div
+            className="today-summary-progress h-2 overflow-hidden border-2"
+            role="progressbar"
+            aria-label="Today summary progress"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow={progress}
+          >
+            <div className="h-full transition-[width] duration-500" style={{ width: `${progress}%` }} />
+          </div>
         </div>
 
-        <nav className="mobile-panel-dock sticky top-3 z-30 mb-4 grid w-full max-w-[430px] grid-cols-3 gap-2 lg:hidden" aria-label="Mobile task panels">
+        <nav className="mobile-panel-dock sticky top-3 z-30 mb-3 grid w-full max-w-[430px] grid-cols-3 gap-2" aria-label="Mobile task panels">
           {mobilePanels.map(({ id, label, icon: Icon }) => {
             const isActivePanel = activePanel === id;
-            const badge = id === "Tasks" ? filteredTasks.length : id === "Calendar" ? selectedDateTaskCount : `${progress}%`;
 
             return (
               <motion.button
@@ -919,10 +1046,9 @@ function TodoApp() {
                 }`}
                 aria-current={isActivePanel ? "page" : undefined}
               >
-                <span className="relative z-10 grid h-full w-full grid-rows-[20px_16px_18px] place-items-center gap-1">
+                <span className="relative z-10 flex h-full w-full flex-col items-center justify-center gap-1">
                   <Icon className="h-5 w-5" aria-hidden="true" />
                   <span className="leading-4">{label}</span>
-                  <span className="mobile-panel-badge">{badge}</span>
                 </span>
               </motion.button>
             );
@@ -933,10 +1059,10 @@ function TodoApp() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: "easeOut" }}
-          className="grid w-full max-w-[430px] items-stretch gap-5 sm:max-w-[560px] lg:max-w-none lg:grid-cols-[minmax(0,760px)_370px]"
+          className="grid w-full max-w-[430px] items-stretch gap-4"
         >
           <section
-            className={`pixel-panel h-full flex-col p-4 sm:p-6 lg:flex ${
+            className={`pixel-panel h-full flex-col p-3.5 sm:p-4 ${
               activePanel === "Tasks" ? "flex" : "hidden"
             }`}
             data-cat-zone="tasks"
@@ -959,23 +1085,10 @@ function TodoApp() {
                 </button>
               </div>
 
-              <div className="mb-2 flex items-center justify-end gap-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#7a5124]">
-                <span>{pendingCount} left</span>
-              </div>
-              <div
-                className="header-progress h-3 overflow-hidden border-2 border-[#a87a3a] bg-[#dfb96e]"
-                role="progressbar"
-                aria-label="Task completion progress"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                aria-valuenow={progress}
-              >
-                <div className="h-full bg-[#3d9348] transition-[width] duration-500" style={{ width: `${progress}%` }} />
-              </div>
             </header>
 
             <section
-              className="next-task-card next-task-feature today-card-modern mb-5 flex gap-3 border-4 border-[#6d4320] bg-[#fff0bf] p-3 font-bold shadow-pixel"
+              className="next-task-card next-task-feature today-card-modern mb-4 flex gap-3 border-4 border-[#6d4320] bg-[#fff0bf] p-3 font-bold shadow-pixel"
               aria-label="Next task"
             >
               <div className="grid h-12 w-12 shrink-0 place-items-center border-2 border-[#5d3a1c] bg-[#4b2b16] text-[#fff7d8] shadow-pixel">
@@ -995,21 +1108,24 @@ function TodoApp() {
               </div>
             </section>
 
-            <div className="mb-5 grid gap-4 sm:grid-cols-[1fr_auto]">
-              <FilterTabs filters={taskFilters} activeFilter={activeFilter} onChange={setActiveFilter} />
+            <div className="mb-3 flex items-stretch gap-2">
+              <div className="min-w-0 flex-1">
+                <FilterTabs filters={taskFilters} activeFilter={activeFilter} onChange={setActiveFilter} />
+              </div>
               <button
                 type="button"
                 onClick={() => setIsClearDialogOpen(true)}
                 disabled={tasks.length === 0}
-                className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 border-2 border-[#d6a16f] bg-[#fff2df] px-5 text-sm font-bold text-[#9c4f2f] shadow-pixel transition hover:-translate-y-0.5 hover:bg-[#ffe7c9] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                className="focus-ring clear-task-button grid min-h-12 w-12 shrink-0 place-items-center border-2 shadow-pixel transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                aria-label="Clear tasks"
+                title="Clear tasks"
               >
-                <Trash2 className="h-4 w-4" aria-hidden="true" />
-                Clear Task
+                <Trash2 className="h-4.5 w-4.5" aria-hidden="true" />
               </button>
             </div>
 
-            <div className="flex flex-1 flex-col space-y-4">
-              <form onSubmit={addTask} className="add-task-input flex flex-wrap items-center gap-3 px-4 py-4 sm:px-5" data-cat-zone="input">
+            <div className="flex flex-1 flex-col space-y-3">
+              <form onSubmit={addTask} className="add-task-input flex flex-wrap items-center gap-2.5 px-3 py-3 sm:px-4" data-cat-zone="input">
                 <motion.button
                   whileTap={{ scale: 0.92 }}
                   type="submit"
@@ -1058,12 +1174,12 @@ function TodoApp() {
             </div>
           </section>
 
-          <aside className={`mx-auto w-full max-w-none space-y-4 lg:block lg:max-w-none ${activePanel === "Tasks" ? "hidden" : "block"}`}>
-            <div className={activePanel === "Calendar" ? "block" : "hidden lg:block"}>
+          <aside className={`mx-auto w-full max-w-none space-y-4 ${activePanel === "Tasks" ? "hidden" : "block"}`}>
+            <div className={activePanel === "Calendar" ? "block" : "hidden"}>
               <CalendarView tasks={tasks} selectedDate={selectedDate} onSelectDate={selectCalendarDate} />
             </div>
-            <div className={activePanel === "Progress" ? "block" : "hidden lg:block"}>
-              <ProgressCard completed={completedCount} total={tasks.length} progress={progress} />
+            <div className={activePanel === "Upcoming" ? "block" : "hidden"}>
+              <UpcomingPanel groups={upcomingGroups} onSelectDate={selectCalendarDate} />
             </div>
 
           </aside>

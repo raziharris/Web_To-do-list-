@@ -53,6 +53,36 @@ body {
   image-rendering: pixelated;
 }
 
+@media (min-width: 640px) {
+  body {
+    background:
+      linear-gradient(90deg, rgba(9, 19, 17, 0.72), rgba(9, 19, 17, 0.42)),
+      #5fbbe0;
+  }
+
+  .app-shell {
+    width: min(430px, 100%);
+    min-height: 100vh;
+    margin-inline: auto;
+    padding-top: 5.25rem;
+    padding-right: 22px;
+    padding-left: 22px;
+    border-right: 4px solid rgba(255, 253, 241, 0.34);
+    border-left: 4px solid rgba(255, 253, 241, 0.34);
+    box-shadow:
+      0 0 0 5px rgba(20, 36, 31, 0.5),
+      0 24px 70px rgba(3, 9, 8, 0.42);
+  }
+
+  .pixel-sky,
+  .pixel-hills,
+  .pixel-garden,
+  .pixel-birds,
+  .walking-character {
+    position: absolute !important;
+  }
+}
+
 @media (max-width: 639px) {
   .mobile-view-scale {
     width: 100%;
@@ -193,6 +223,40 @@ button {
     background: rgba(255, 253, 241, 0.56);
   }
 
+  .clear-task-button {
+    border-color: #d6a16f;
+    background: #fff2df;
+    color: #9c4f2f;
+  }
+
+  .clear-task-button:hover {
+    background: #ffe7c9;
+  }
+
+  .upcoming-group,
+  .upcoming-empty {
+    border-color: rgba(111, 141, 83, 0.34);
+    background:
+      linear-gradient(135deg, rgba(255, 253, 241, 0.62), transparent 58%),
+      rgba(255, 253, 241, 0.7);
+  }
+
+  .upcoming-task {
+    border-color: rgba(147, 181, 111, 0.42);
+    background: rgba(255, 253, 241, 0.82);
+    color: #241609;
+  }
+
+  .upcoming-task:hover {
+    background: #edf4c9;
+  }
+
+  .upcoming-task-date {
+    border-color: #b88947;
+    background: #fff7d8;
+    color: #111111;
+  }
+
   .pixel-tabs {
     overflow: hidden;
   }
@@ -268,6 +332,45 @@ button {
     backdrop-filter: blur(3px);
   }
 
+  .today-summary-card {
+    border-color: rgba(111, 141, 83, 0.48);
+    background:
+      linear-gradient(135deg, rgba(255, 253, 241, 0.74), transparent 58%),
+      rgba(240, 246, 207, 0.62);
+  }
+
+  .today-summary-progress {
+    border-color: rgba(111, 141, 83, 0.38);
+    background: rgba(255, 253, 241, 0.55);
+  }
+
+  .today-summary-progress > div {
+    background: linear-gradient(90deg, #3d9348, #8dbc55);
+  }
+
+  .notification-toggle {
+    border-color: #74a85d;
+    background: #fffdf1;
+    color: #3d6d37;
+  }
+
+  .notification-toggle-floating {
+    position: absolute;
+    top: max(10px, env(safe-area-inset-top, 0px));
+    right: max(10px, env(safe-area-inset-right, 0px));
+    z-index: 45;
+    opacity: 0.48;
+  }
+
+  .notification-toggle:hover {
+    background: #edf4c9;
+    opacity: 0.92;
+  }
+
+  .notification-toggle:disabled {
+    opacity: 0.26;
+  }
+
   .malaysia-time-pill {
     border-color: rgba(111, 141, 83, 0.28);
     background: rgba(255, 253, 241, 0.3);
@@ -275,19 +378,50 @@ button {
   }
 
   .dark .malaysia-time-bar {
-    border-color: rgba(159, 202, 149, 0.24);
+    border-color: rgba(216, 194, 112, 0.42);
     background:
-      linear-gradient(135deg, rgba(190, 213, 166, 0.12), transparent 58%),
-      rgba(32, 56, 47, 0.48);
+      linear-gradient(135deg, rgba(255, 214, 111, 0.12), transparent 58%),
+      rgba(20, 36, 31, 0.72);
     box-shadow:
-      0 0 0 1px rgba(255, 247, 214, 0.08) inset,
-      3px 3px 0 rgba(5, 13, 11, 0.28);
+      0 0 0 1px rgba(255, 248, 215, 0.1) inset,
+      3px 3px 0 rgba(3, 9, 8, 0.34);
+    color: var(--dark-text);
+  }
+
+  .dark .today-summary-card {
+    border-color: rgba(216, 194, 112, 0.56);
+    background:
+      linear-gradient(135deg, rgba(255, 214, 111, 0.13), transparent 58%),
+      rgba(20, 36, 31, 0.82);
+  }
+
+  .dark .malaysia-time-bar p {
+    color: var(--dark-text);
+  }
+
+  .dark .today-summary-card span {
+    color: var(--dark-muted);
+  }
+
+  .dark .today-summary-progress {
+    border-color: rgba(216, 194, 112, 0.34);
+    background: rgba(255, 248, 215, 0.12);
+  }
+
+  .dark .today-summary-progress > div {
+    background: linear-gradient(90deg, #9bd184, #ffd66f);
+  }
+
+  .dark .notification-toggle {
+    border-color: rgba(255, 214, 111, 0.62);
+    background: #fff8d7;
+    color: #14241f;
   }
 
   .dark .malaysia-time-pill {
-    border-color: rgba(159, 202, 149, 0.24);
-    background: rgba(255, 247, 214, 0.11);
-    color: var(--dark-muted);
+    border-color: rgba(255, 214, 111, 0.46);
+    background: rgba(255, 248, 215, 0.12);
+    color: var(--dark-highlight);
   }
 
   .task-swipe-shell {
@@ -459,6 +593,49 @@ button {
     color: #fff8d7;
   }
 
+  .dark .clear-task-button {
+    border-color: rgba(255, 162, 120, 0.55);
+    background: rgba(255, 248, 215, 0.1);
+    color: #ffbc91;
+  }
+
+  .dark .clear-task-button:hover {
+    background: rgba(255, 162, 120, 0.18);
+  }
+
+  .dark .upcoming-panel h2,
+  .dark .upcoming-task span:last-child {
+    color: var(--dark-text);
+  }
+
+  .dark .upcoming-group,
+  .dark .upcoming-empty {
+    border-color: rgba(216, 194, 112, 0.34);
+    background:
+      linear-gradient(135deg, rgba(255, 214, 111, 0.1), transparent 58%),
+      rgba(20, 36, 31, 0.78);
+    color: var(--dark-muted);
+  }
+
+  .dark .upcoming-group h3 {
+    color: var(--dark-highlight);
+  }
+
+  .dark .upcoming-task {
+    border-color: rgba(216, 194, 112, 0.28);
+    background: rgba(24, 45, 38, 0.96);
+  }
+
+  .dark .upcoming-task:hover {
+    background: rgba(31, 58, 48, 0.98);
+  }
+
+  .dark .upcoming-task-date {
+    border-color: #d09a36;
+    background: #fff8d7;
+    color: #111111;
+  }
+
   .dark .pixel-panel h1,
   .dark .pixel-panel h2,
   .dark .pixel-panel p,
@@ -485,6 +662,10 @@ button {
 
   .dark .pixel-panel .task-date-text {
     color: #ffd66f;
+  }
+
+  .dark .pixel-panel button:not(.mobile-panel-tab):not(.add-task-button):not(.notification-toggle) {
+    color: var(--dark-highlight);
   }
 
   .next-task-card {
@@ -1320,7 +1501,7 @@ button {
   }
 
   .app-shell {
-    padding-top: max(6.75rem, calc(env(safe-area-inset-top, 0px) + 5.5rem));
+    padding-top: max(5.85rem, calc(env(safe-area-inset-top, 0px) + 4.8rem));
     padding-right: max(22px, calc(env(safe-area-inset-right, 0px) + 20px));
     padding-left: max(22px, calc(env(safe-area-inset-left, 0px) + 20px));
   }
@@ -1339,8 +1520,8 @@ button {
   }
 
   .pixel-row {
-    min-height: 76px;
-    padding-block: 14px;
+    min-height: 70px;
+    padding-block: 11px;
   }
 
   .task-scroll {
@@ -1354,8 +1535,8 @@ button {
   }
 
   .add-task-input {
-    min-height: 88px;
-    gap: 10px;
+    min-height: 76px;
+    gap: 8px;
   }
 
   .add-task-date {

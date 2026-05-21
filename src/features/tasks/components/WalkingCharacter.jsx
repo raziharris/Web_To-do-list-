@@ -250,7 +250,7 @@ function WalkingCharacter({ profile = "cuzi", reactionId, lane = 0 }) {
 
   return (
     <div
-      className={`pointer-events-none fixed inset-x-0 bottom-0 h-[45vh] min-h-[230px] overflow-visible ${
+      className={`walking-character pointer-events-none fixed inset-x-0 bottom-0 h-[45vh] min-h-[230px] overflow-visible ${
         celebrating ? "z-40" : "z-[8]"
       }`}
       aria-hidden="true"
