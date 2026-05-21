@@ -4,23 +4,35 @@
 
 :root {
   color-scheme: light;
-  --parchment: #fff4d2;
-  --parchment-light: #fff9e8;
-  --wood: #5c3921;
-  --wood-light: #b88947;
+  --parchment: #fff8df;
+  --parchment-light: #fffdf1;
+  --wood: #49623a;
+  --wood-light: #93b56f;
+  --panel-border: #6f8d53;
+  --panel-shadow: rgba(45, 78, 42, 0.22);
+  --accent-leaf: #4f8f57;
+  --accent-sun: #f2c96b;
+  --text-main: #26351f;
+  --text-muted: #657748;
 }
 
 .dark {
   color-scheme: dark;
-  --parchment: #f6d895;
-  --parchment-light: #ffeabb;
-  --wood: #3a2116;
-  --wood-light: #9a6a35;
-  --dark-panel: #4e3526;
-  --dark-panel-soft: #6b4a32;
-  --dark-text: #fff0c2;
-  --dark-muted: #e0bd7c;
-  --dark-highlight: #c7832f;
+  --parchment: #34472e;
+  --parchment-light: #425936;
+  --wood: #d5b469;
+  --wood-light: #88a866;
+  --panel-border: #b99652;
+  --panel-shadow: rgba(12, 18, 12, 0.42);
+  --accent-leaf: #a8c978;
+  --accent-sun: #f0c05b;
+  --dark-panel: #34472e;
+  --dark-panel-soft: #425936;
+  --dark-text: #fff5c9;
+  --dark-muted: #d8c585;
+  --dark-highlight: #f0c05b;
+  --text-main: #fff5c9;
+  --text-muted: #d8c585;
 }
 
 * {
@@ -70,13 +82,15 @@ button {
   .pixel-input,
   .pixel-tabs,
   .next-task-card {
-    border: 4px solid var(--wood);
+    border: 4px solid var(--panel-border);
     background:
-      linear-gradient(135deg, rgba(255, 255, 255, 0.44), transparent 46%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.58), transparent 48%),
+      linear-gradient(180deg, rgba(255, 253, 241, 0.92), rgba(245, 237, 196, 0.86)),
       var(--parchment);
     box-shadow:
-      0 0 0 2px rgba(185, 138, 82, 0.58) inset,
-      4px 4px 0 rgba(61, 34, 13, 0.42);
+      0 0 0 2px rgba(255, 255, 255, 0.34) inset,
+      4px 4px 0 var(--panel-shadow);
+    color: var(--text-main);
   }
 
   .pixel-panel {
@@ -89,7 +103,7 @@ button {
     pointer-events: none;
     position: absolute;
     inset: 6px;
-    border: 2px solid rgba(185, 138, 82, 0.34);
+    border: 2px solid rgba(111, 141, 83, 0.24);
   }
 
   .pixel-profile {
@@ -109,8 +123,8 @@ button {
     font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
     font-weight: 700;
     letter-spacing: 0;
-    color: #4b2b16;
-    text-shadow: 1px 1px 0 rgba(255, 249, 232, 0.78);
+    color: var(--text-main);
+    text-shadow: 1px 1px 0 rgba(255, 253, 241, 0.78);
   }
 
   .header-progress {
@@ -134,14 +148,14 @@ button {
     position: relative;
     overflow: hidden;
     min-height: 78px;
-    border: 3px solid rgba(92, 57, 33, 0.82);
+    border: 3px solid rgba(111, 141, 83, 0.72);
     background:
-      linear-gradient(135deg, rgba(255, 249, 232, 0.72), transparent 48%),
-      linear-gradient(90deg, rgba(255, 249, 232, 0.64), rgba(234, 208, 160, 0.86)),
-      #ead0a0;
+      linear-gradient(135deg, rgba(255, 253, 241, 0.82), transparent 48%),
+      linear-gradient(90deg, rgba(255, 253, 241, 0.72), rgba(224, 236, 180, 0.9)),
+      #e8edc5;
     box-shadow:
-      0 0 0 2px rgba(255, 249, 232, 0.42) inset,
-      4px 4px 0 rgba(61, 34, 13, 0.32);
+      0 0 0 2px rgba(255, 255, 255, 0.36) inset,
+      4px 4px 0 rgba(45, 78, 42, 0.2);
   }
 
   .add-task-input::after {
@@ -154,9 +168,9 @@ button {
     height: 34px;
     opacity: 0.26;
     background:
-      linear-gradient(#5c3921 0 0) 0 0 / 10px 10px no-repeat,
-      linear-gradient(#c8934a 0 0) 22px 8px / 10px 10px no-repeat,
-      linear-gradient(#6f9f4f 0 0) 42px 2px / 10px 10px no-repeat;
+      linear-gradient(#49623a 0 0) 0 0 / 10px 10px no-repeat,
+      linear-gradient(#f2c96b 0 0) 22px 8px / 10px 10px no-repeat,
+      linear-gradient(#7ba86f 0 0) 42px 2px / 10px 10px no-repeat;
   }
 
   .add-task-input > * {
@@ -165,18 +179,18 @@ button {
   }
 
   .add-task-button {
-    border: 2px solid #6d4320;
+    border: 2px solid #49623a;
     background:
-      linear-gradient(135deg, rgba(255, 249, 232, 0.38), transparent 48%),
-      #f0c05b;
+      linear-gradient(135deg, rgba(255, 253, 241, 0.44), transparent 48%),
+      var(--accent-sun);
     box-shadow:
-      0 0 0 2px rgba(255, 249, 232, 0.26) inset,
-      3px 3px 0 rgba(61, 34, 13, 0.4);
+      0 0 0 2px rgba(255, 253, 241, 0.28) inset,
+      3px 3px 0 rgba(45, 78, 42, 0.28);
   }
 
   .add-task-date {
-    border: 2px solid rgba(185, 138, 82, 0.58);
-    background: rgba(255, 249, 232, 0.46);
+    border: 2px solid rgba(111, 141, 83, 0.44);
+    background: rgba(255, 253, 241, 0.56);
   }
 
   .pixel-tabs {
@@ -185,21 +199,21 @@ button {
 
   .pixel-row {
     min-height: 68px;
-    border-right: 2px solid rgba(185, 138, 82, 0.58);
-    border-bottom: 2px solid rgba(185, 138, 82, 0.58);
-    border-left: 2px solid rgba(185, 138, 82, 0.58);
-    background: rgba(255, 249, 232, 0.88);
+    border-right: 2px solid rgba(111, 141, 83, 0.36);
+    border-bottom: 2px solid rgba(111, 141, 83, 0.36);
+    border-left: 2px solid rgba(111, 141, 83, 0.36);
+    background: rgba(255, 253, 241, 0.9);
   }
 
   .mobile-panel-dock {
     padding: 6px;
-    border: 3px solid rgba(92, 57, 33, 0.82);
+    border: 3px solid rgba(111, 141, 83, 0.7);
     background:
-      linear-gradient(135deg, rgba(255, 249, 232, 0.72), transparent 52%),
-      rgba(255, 244, 210, 0.9);
+      linear-gradient(135deg, rgba(255, 253, 241, 0.8), transparent 52%),
+      rgba(240, 246, 207, 0.9);
     box-shadow:
-      0 0 0 2px rgba(255, 249, 232, 0.42) inset,
-      4px 4px 0 rgba(61, 34, 13, 0.32);
+      0 0 0 2px rgba(255, 255, 255, 0.38) inset,
+      4px 4px 0 rgba(45, 78, 42, 0.22);
     backdrop-filter: blur(10px);
   }
 
@@ -209,7 +223,7 @@ button {
     position: absolute;
     inset: 0;
     opacity: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 249, 232, 0.62), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 253, 241, 0.62), transparent);
     transform: translateX(-100%);
     transition: opacity 160ms ease;
   }
@@ -224,44 +238,44 @@ button {
     min-width: 28px;
     height: 18px;
     place-items: center;
-    border: 2px solid rgba(92, 57, 33, 0.44);
-    background: rgba(255, 249, 232, 0.68);
+    border: 2px solid rgba(73, 98, 58, 0.38);
+    background: rgba(255, 253, 241, 0.7);
     padding: 0 5px;
     font-size: 10px;
     line-height: 1;
   }
 
   .malaysia-time-bar {
-    border: 2px solid rgba(92, 57, 33, 0.34);
+    border: 2px solid rgba(111, 141, 83, 0.28);
     background:
-      linear-gradient(135deg, rgba(255, 249, 232, 0.24), transparent 58%),
-      rgba(255, 244, 210, 0.26);
+      linear-gradient(135deg, rgba(255, 253, 241, 0.26), transparent 58%),
+      rgba(240, 246, 207, 0.28);
     box-shadow:
-      0 0 0 1px rgba(255, 249, 232, 0.16) inset,
-      3px 3px 0 rgba(61, 34, 13, 0.14);
+      0 0 0 1px rgba(255, 255, 255, 0.14) inset,
+      3px 3px 0 rgba(45, 78, 42, 0.12);
     backdrop-filter: blur(3px);
   }
 
   .malaysia-time-pill {
-    border-color: rgba(185, 138, 82, 0.3);
-    background: rgba(255, 247, 216, 0.28);
-    color: #7a5124;
+    border-color: rgba(111, 141, 83, 0.28);
+    background: rgba(255, 253, 241, 0.3);
+    color: var(--text-muted);
   }
 
   .dark .malaysia-time-bar {
-    border-color: rgba(255, 222, 156, 0.2);
+    border-color: rgba(213, 180, 105, 0.24);
     background:
-      linear-gradient(135deg, rgba(255, 207, 128, 0.1), transparent 58%),
-      rgba(76, 49, 31, 0.72);
+      linear-gradient(135deg, rgba(213, 180, 105, 0.12), transparent 58%),
+      rgba(52, 71, 46, 0.5);
     box-shadow:
-      0 0 0 1px rgba(255, 219, 143, 0.08) inset,
-      3px 3px 0 rgba(28, 15, 12, 0.28);
+      0 0 0 1px rgba(255, 245, 201, 0.08) inset,
+      3px 3px 0 rgba(12, 18, 12, 0.26);
   }
 
   .dark .malaysia-time-pill {
-    border-color: rgba(255, 222, 156, 0.18);
-    background: rgba(49, 31, 22, 0.36);
-    color: #ffe3a3;
+    border-color: rgba(213, 180, 105, 0.22);
+    background: rgba(255, 245, 201, 0.12);
+    color: var(--dark-muted);
   }
 
   .task-swipe-shell {
@@ -269,12 +283,12 @@ button {
   }
 
   .task-swipe-rail {
-    border-right: 2px solid rgba(185, 138, 82, 0.42);
-    border-bottom: 2px solid rgba(185, 138, 82, 0.42);
-    border-left: 2px solid rgba(185, 138, 82, 0.42);
+    border-right: 2px solid rgba(111, 141, 83, 0.28);
+    border-bottom: 2px solid rgba(111, 141, 83, 0.28);
+    border-left: 2px solid rgba(111, 141, 83, 0.28);
     background:
-      linear-gradient(90deg, rgba(61, 147, 72, 0.28), transparent 34%, transparent 66%, rgba(240, 192, 91, 0.34)),
-      rgba(255, 247, 216, 0.88);
+      linear-gradient(90deg, rgba(79, 143, 87, 0.24), transparent 34%, transparent 66%, rgba(242, 201, 107, 0.28)),
+      rgba(255, 253, 241, 0.88);
   }
 
   .task-swipe-shell:first-child .task-swipe-rail {
@@ -286,9 +300,9 @@ button {
     height: 34px;
     width: 34px;
     place-items: center;
-    border: 2px solid #6d4320;
-    background: #fff7d8;
-    color: #4b2b16;
+    border: 2px solid #49623a;
+    background: #fffdf1;
+    color: #26351f;
     opacity: 0.42;
     transform: scale(0.88);
     transition: opacity 160ms ease, transform 160ms ease;
@@ -300,7 +314,7 @@ button {
   }
 
   .pixel-row:first-child {
-    border-top: 2px solid rgba(185, 138, 82, 0.58);
+    border-top: 2px solid rgba(111, 141, 83, 0.36);
   }
 
   .task-active::before {
@@ -310,7 +324,7 @@ button {
     top: 0;
     bottom: 0;
     width: 5px;
-    background: #c8934a;
+    background: var(--accent-sun);
   }
 
   .task-complete::before {
@@ -320,13 +334,13 @@ button {
     top: 0;
     bottom: 0;
     width: 5px;
-    background: #6f9f4f;
+    background: var(--accent-leaf);
   }
 
   .task-active:hover {
     background:
-      linear-gradient(90deg, rgba(240, 192, 91, 0.16), transparent 34%),
-      rgba(255, 249, 232, 0.94);
+      linear-gradient(90deg, rgba(242, 201, 107, 0.16), transparent 34%),
+      rgba(255, 253, 241, 0.95);
   }
 
   .dark .pixel-panel,
@@ -335,23 +349,26 @@ button {
   .dark .pixel-tabs,
   .dark .next-task-card {
     background:
-      linear-gradient(135deg, rgba(255, 210, 128, 0.12), transparent 46%),
+      linear-gradient(135deg, rgba(255, 245, 201, 0.08), transparent 46%),
+      linear-gradient(180deg, rgba(66, 89, 54, 0.95), rgba(49, 65, 43, 0.95)),
       var(--dark-panel);
     box-shadow:
-      0 0 0 2px rgba(255, 214, 142, 0.14) inset,
-      4px 4px 0 rgba(16, 10, 9, 0.64);
+      0 0 0 2px rgba(255, 245, 201, 0.1) inset,
+      4px 4px 0 var(--panel-shadow);
     color: var(--dark-text);
   }
 
   .dark .pixel-row {
-    background: rgba(91, 60, 39, 0.92);
+    border-color: rgba(213, 180, 105, 0.22);
+    background: rgba(58, 78, 50, 0.92);
   }
 
   .dark .add-task-input {
+    border-color: rgba(213, 180, 105, 0.38);
     background:
-      linear-gradient(135deg, rgba(255, 226, 166, 0.14), transparent 48%),
-      linear-gradient(90deg, rgba(133, 88, 44, 0.86), rgba(94, 61, 34, 0.9)),
-      #6f4828;
+      linear-gradient(135deg, rgba(255, 245, 201, 0.1), transparent 48%),
+      linear-gradient(90deg, rgba(75, 101, 62, 0.9), rgba(48, 65, 43, 0.92)),
+      #34472e;
   }
 
   .dark .pixel-panel h1,
@@ -960,18 +977,18 @@ button {
 
 .today-card-modern,
 .calendar-card-modern {
-  border: 1px solid rgba(92, 57, 33, 0.18);
+  border: 1px solid rgba(111, 141, 83, 0.24);
   border-radius: 18px;
   background:
-    linear-gradient(135deg, rgba(255, 252, 242, 0.92), rgba(255, 244, 210, 0.78)),
-    rgba(255, 249, 232, 0.86);
-  box-shadow: 0 14px 34px rgba(74, 49, 24, 0.14);
+    linear-gradient(135deg, rgba(255, 253, 241, 0.94), rgba(236, 244, 205, 0.84)),
+    rgba(255, 253, 241, 0.86);
+  box-shadow: 0 14px 34px rgba(45, 78, 42, 0.12);
   backdrop-filter: blur(14px);
 }
 
 .today-card-modern {
   border-width: 1px;
-  box-shadow: 0 16px 38px rgba(74, 49, 24, 0.13);
+  box-shadow: 0 16px 38px rgba(45, 78, 42, 0.13);
 }
 
 .today-card-modern::after,
@@ -982,42 +999,42 @@ button {
 .today-card-modern > div:first-child {
   border: 0;
   border-radius: 16px;
-  background: #4b2b16;
+  background: #49623a;
 }
 
 .dark .today-card-modern {
-  border: 2px solid rgba(255, 193, 91, 0.5);
+  border: 2px solid rgba(213, 180, 105, 0.38);
   background:
-    radial-gradient(circle at 88% 18%, rgba(255, 193, 91, 0.32) 0 26px, transparent 27px),
-    linear-gradient(135deg, rgba(143, 86, 31, 0.96), rgba(73, 45, 28, 0.96));
+    radial-gradient(circle at 88% 18%, rgba(240, 192, 91, 0.18) 0 26px, transparent 27px),
+    linear-gradient(135deg, rgba(73, 99, 58, 0.96), rgba(44, 61, 39, 0.96));
   box-shadow:
-    0 0 0 2px rgba(255, 224, 156, 0.08) inset,
-    0 20px 48px rgba(16, 10, 9, 0.38),
-    0 0 34px rgba(199, 131, 47, 0.18);
-  color: #fff3c7;
+    0 0 0 2px rgba(255, 245, 201, 0.08) inset,
+    0 20px 48px rgba(12, 18, 12, 0.38),
+    0 0 34px rgba(168, 201, 120, 0.1);
+  color: var(--dark-text);
 }
 
 .dark .today-card-modern > div:first-child {
-  background: #2d1b12;
-  color: #ffd980;
+  background: #26351f;
+  color: var(--dark-highlight);
 }
 
 .dark .today-card-modern span {
-  border-color: rgba(255, 216, 128, 0.32);
-  background: rgba(49, 31, 22, 0.42);
-  color: #ffe3a3;
+  border-color: rgba(213, 180, 105, 0.28);
+  background: rgba(255, 245, 201, 0.1);
+  color: var(--dark-muted);
 }
 
 .dark .today-card-modern p {
-  color: #fff3c7;
+  color: var(--dark-text);
 }
 
 .calendar-card-modern {
-  box-shadow: 0 14px 34px rgba(74, 49, 24, 0.12);
+  box-shadow: 0 14px 34px rgba(45, 78, 42, 0.12);
 }
 
 .calendar-card-modern::before {
-  border-color: rgba(185, 138, 82, 0.18);
+  border-color: rgba(111, 141, 83, 0.2);
   border-radius: 14px;
 }
 
@@ -1027,22 +1044,22 @@ button {
 
 .dark .today-card-modern,
 .dark .calendar-card-modern {
-  border-color: rgba(255, 222, 156, 0.18);
+  border-color: rgba(213, 180, 105, 0.22);
   background:
-    linear-gradient(135deg, rgba(125, 82, 40, 0.86), rgba(88, 57, 35, 0.9)),
-    rgba(75, 49, 31, 0.9);
-  box-shadow: 0 18px 42px rgba(22, 13, 16, 0.34);
+    linear-gradient(135deg, rgba(66, 89, 54, 0.9), rgba(44, 61, 39, 0.92)),
+    rgba(49, 65, 43, 0.9);
+  box-shadow: 0 18px 42px rgba(12, 18, 12, 0.34);
 }
 
 .dark .today-card-modern {
-  border-color: rgba(255, 193, 91, 0.5);
+  border-color: rgba(213, 180, 105, 0.38);
   background:
-    radial-gradient(circle at 88% 18%, rgba(255, 193, 91, 0.32) 0 26px, transparent 27px),
-    linear-gradient(135deg, rgba(143, 86, 31, 0.96), rgba(73, 45, 28, 0.96));
+    radial-gradient(circle at 88% 18%, rgba(240, 192, 91, 0.18) 0 26px, transparent 27px),
+    linear-gradient(135deg, rgba(73, 99, 58, 0.96), rgba(44, 61, 39, 0.96));
   box-shadow:
-    0 0 0 2px rgba(255, 224, 156, 0.08) inset,
-    0 20px 48px rgba(16, 10, 9, 0.38),
-    0 0 34px rgba(199, 131, 47, 0.18);
+    0 0 0 2px rgba(255, 245, 201, 0.08) inset,
+    0 20px 48px rgba(12, 18, 12, 0.38),
+    0 0 34px rgba(168, 201, 120, 0.1);
 }
 
 @keyframes settle-progress-shine {

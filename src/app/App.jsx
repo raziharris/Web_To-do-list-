@@ -846,8 +846,8 @@ function TodoApp() {
                 whileTap={{ scale: 0.94 }}
                 className={`focus-ring mobile-panel-tab relative min-h-14 overflow-hidden border-2 px-2 text-xs font-bold uppercase text-[#3b2410] shadow-pixel transition ${
                   isActivePanel
-                    ? "border-[#5c3921] bg-[#f0c05b]"
-                    : "border-[#b88947] bg-[#fff9e8]/90 hover:bg-[#fff0bf]"
+                    ? "border-[#6f8d53] bg-[#dfeab2]"
+                    : "border-[#93b56f] bg-[#fffdf1]/90 hover:bg-[#edf4c9]"
                 }`}
                 aria-current={isActivePanel ? "page" : undefined}
               >
@@ -881,7 +881,7 @@ function TodoApp() {
                 <button
                   type="button"
                   onClick={toggleTheme}
-                  className="focus-ring inline-flex h-10 shrink-0 items-center gap-2 border-2 border-[#d9b678] bg-[#fff9e8] px-3 text-[#5c3921] shadow-pixel transition hover:-translate-y-0.5 hover:bg-[#f0c05b] sm:h-11"
+                  className="focus-ring inline-flex h-10 shrink-0 items-center gap-2 border-2 border-[#93b56f] bg-[#fffdf1] px-3 text-[#49623a] shadow-pixel transition hover:-translate-y-0.5 hover:bg-[#edf4c9] sm:h-11"
                   aria-label={isDark ? "Switch to day mode" : "Switch to night mode"}
                 >
                   {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
@@ -896,7 +896,7 @@ function TodoApp() {
                   type="button"
                   onClick={enableTaskNotifications}
                   disabled={notificationPermission === "unsupported"}
-                  className="focus-ring inline-flex min-h-8 items-center gap-1 border-2 border-[#d4a661] bg-[#fff7d8]/70 px-2 text-[10px] font-bold text-[#7a5124] shadow-pixel transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0"
+                  className="focus-ring inline-flex min-h-8 items-center gap-1 border-2 border-[#93b56f] bg-[#fffdf1]/70 px-2 text-[10px] font-bold text-[#49623a] shadow-pixel transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0"
                   aria-label={
                     notificationPermission === "granted"
                       ? "Send a test task completion notification"
@@ -930,7 +930,7 @@ function TodoApp() {
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex flex-wrap items-center gap-2">
                   <p className="text-[11px] uppercase leading-4 tracking-[0.08em] text-[#7a5124]">Focus now</p>
-                  <span className="inline-flex items-center gap-1 border-2 border-[#d4a661] bg-[#fff7d8] px-2 py-0.5 text-[10px] uppercase leading-4 text-[#7a5124]">
+                  <span className="inline-flex items-center gap-1 border-2 border-[#93b56f] bg-[#fffdf1] px-2 py-0.5 text-[10px] uppercase leading-4 text-[#49623a]">
                     <CalendarDays className="h-3 w-3" aria-hidden="true" />
                     {nextTask ? taskDateFormatter.format(new Date(`${nextTask.dueDate}T00:00:00`)) : "Clear"}
                   </span>
@@ -947,7 +947,7 @@ function TodoApp() {
                 type="button"
                 onClick={() => setIsClearDialogOpen(true)}
                 disabled={tasks.length === 0}
-                className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 bg-[#f1d390] px-5 text-sm font-bold text-[#9c271d] shadow-pixel transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 border-2 border-[#d6a16f] bg-[#fff2df] px-5 text-sm font-bold text-[#9c4f2f] shadow-pixel transition hover:-translate-y-0.5 hover:bg-[#ffe7c9] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
               >
                 <Trash2 className="h-4 w-4" aria-hidden="true" />
                 Clear Task
