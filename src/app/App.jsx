@@ -670,6 +670,12 @@ function TodoApp() {
       return;
     }
 
+    if (Notification.permission === "granted") {
+      setNotificationPermission("granted");
+      showTaskNotification("Notifications are working");
+      return;
+    }
+
     const nextPermission = await Notification.requestPermission();
     setNotificationPermission(nextPermission);
 
@@ -889,9 +895,13 @@ function TodoApp() {
                 <button
                   type="button"
                   onClick={enableTaskNotifications}
-                  disabled={notificationPermission === "granted" || notificationPermission === "unsupported"}
+                  disabled={notificationPermission === "unsupported"}
                   className="focus-ring inline-flex min-h-8 items-center gap-1 border-2 border-[#d4a661] bg-[#fff7d8]/70 px-2 text-[10px] font-bold text-[#7a5124] shadow-pixel transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0"
-                  aria-label="Enable task completion notifications"
+                  aria-label={
+                    notificationPermission === "granted"
+                      ? "Send a test task completion notification"
+                      : "Enable task completion notifications"
+                  }
                 >
                   <BellRing className="h-3.5 w-3.5" aria-hidden="true" />
                   {notificationPermission === "granted" ? "On" : "Notify"}
