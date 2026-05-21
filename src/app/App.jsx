@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BarChart3,
+  BellRing,
   CalendarDays,
   CheckCircle2,
   Fingerprint,
@@ -41,6 +42,7 @@ const PASSWORD_SESSION_KEY = "my-tasks-password-unlocked";
 const FACE_ID_CREDENTIAL_KEY = "my-tasks-face-id-credential";
 const FACE_ID_USER_KEY = "my-tasks-face-id-user";
 const REMOTE_MIGRATION_KEY = "my-tasks-remote-migrated";
+const TASK_NOTIFICATION_KEY = "my-tasks-notification-enabled";
 const SITE_PASSWORD_HASH = "9e468432d7dde30ef9c431eb88b6951b2928dc337b88f349a5db9d124b88bada";
 const MALAYSIA_TIME_ZONE = "Asia/Kuala_Lumpur";
 const gardenCompanions = [
@@ -162,6 +164,44 @@ function createSkyClouds() {
     delay: -(Math.random() * 38),
     opacity: 0.28 + Math.random() * 0.36,
   }));
+}
+function canUseTaskNotifications() {
+  return "Notification" in window && "serviceWorker" in navigator;
+}
+
+async function showTaskNotification(taskTitle) {
+  if (!canUseTaskNotifications() || Notification.permission !== "granted") {
+    return;
+  }
+
+  const payload = {
+    title: "Task completed",
+    body: taskTitle ? `"${taskTitle}" is done.` : "A task was marked as done.",
+    tag: `task-completed-${Date.now()}`,
+    url: "/",
+  };
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+
+    if (registration.active) {
+      registration.active.postMessage({
+        type: "SHOW_TASK_NOTIFICATION",
+        payload,
+      });
+      return;
+    }
+
+    await registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: payload.tag,
+      data: { url: payload.url },
+    });
+  } catch (error) {
+    console.warn("Could not show task notification.", error);
+  }
 }
 
 async function hashPassword(password) {
@@ -446,8 +486,13 @@ function TodoApp() {
   const [activeReactionTaskId, setActiveReactionTaskId] = useState(null);
   const [skyState, setSkyState] = useState(() => getMalaysiaSkyState());
   const [currentMalaysiaTime, setCurrentMalaysiaTime] = useState(() => new Date());
+  const [notificationPermission, setNotificationPermission] = useState(() =>
+    canUseTaskNotifications() ? Notification.permission : "unsupported",
+  );
   const [themeOverride, setThemeOverride] = useState(null);
   const applyingRemoteTasksRef = useRef(false);
+  const notifiedCompletedTasksRef = useRef(new Map());
+  const tasksRef = useRef(tasks);
   const characterSafeSpace = 132;
   const isDark = themeOverride ?? skyState.isDark;
   const malaysiaDateLabel = malaysiaHeaderDateFormatter.format(currentMalaysiaTime);
@@ -488,6 +533,10 @@ function TodoApp() {
   }, [activeFilter, tasks]);
 
   useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+
+  useEffect(() => {
     saveTasks(tasks);
 
     if (applyingRemoteTasksRef.current) {
@@ -503,7 +552,17 @@ function TodoApp() {
       console.warn("Could not save tasks to Supabase.", error);
     });
   }, [isRemoteReady, tasks]);
+  function notifyTaskDone(task) {
+    const lastNotificationTime = notifiedCompletedTasksRef.current.get(task.id) || 0;
+    const now = Date.now();
 
+    if (now - lastNotificationTime < 5000) {
+      return;
+    }
+
+    notifiedCompletedTasksRef.current.set(task.id, now);
+    showTaskNotification(task.title);
+  }
   useEffect(() => {
     if (!isSupabaseConfigured) {
       return;
@@ -546,7 +605,17 @@ function TodoApp() {
 
     const syncChannel = supabase
       .channel("tasks-sync")
-      .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, (payload) => {
+        const previousTask = tasksRef.current.find((task) => task.id === payload.new?.id);
+        const wasCompleted = payload.old?.completed ?? previousTask?.completed;
+
+        if (payload.eventType === "UPDATE" && wasCompleted === false && payload.new?.completed === true) {
+          notifyTaskDone({
+            id: payload.new.id,
+            title: payload.new.title,
+          });
+        }
+
         applyTasksFromSupabase();
       })
       .subscribe();
@@ -591,6 +660,20 @@ function TodoApp() {
   function toggleTheme() {
     setThemeOverride((currentOverride) => !(currentOverride ?? skyState.isDark));
   }
+  async function enableTaskNotifications() {
+    if (!canUseTaskNotifications()) {
+      setNotificationPermission("unsupported");
+      return;
+    }
+
+    const nextPermission = await Notification.requestPermission();
+    setNotificationPermission(nextPermission);
+
+    if (nextPermission === "granted") {
+      localStorage.setItem(TASK_NOTIFICATION_KEY, "true");
+      showTaskNotification("Notifications are enabled");
+    }
+  }
 
   function showCompletionReaction(taskId) {
     setActiveReactionTaskId(taskId);
@@ -634,6 +717,7 @@ function TodoApp() {
         if (!task.completed) {
           playCompletionPing();
           showCompletionReaction(taskId);
+          notifyTaskDone(task);
         }
 
         return { ...task, completed: !task.completed };
@@ -798,7 +882,17 @@ function TodoApp() {
                 </button>
               </div>
 
-              <div className="mb-2 flex items-center justify-end gap-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#7a5124]">
+              <div className="mb-2 flex items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#7a5124]">
+                <button
+                  type="button"
+                  onClick={enableTaskNotifications}
+                  disabled={notificationPermission === "granted" || notificationPermission === "unsupported"}
+                  className="focus-ring inline-flex min-h-8 items-center gap-1 border-2 border-[#d4a661] bg-[#fff7d8]/70 px-2 text-[10px] font-bold text-[#7a5124] shadow-pixel transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0"
+                  aria-label="Enable task completion notifications"
+                >
+                  <BellRing className="h-3.5 w-3.5" aria-hidden="true" />
+                  {notificationPermission === "granted" ? "On" : "Notify"}
+                </button>
                 <span>{pendingCount} left</span>
               </div>
               <div

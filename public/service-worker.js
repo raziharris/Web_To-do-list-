@@ -1,4 +1,4 @@
-const CACHE_NAME = "my-tasks-v2";
+const CACHE_NAME = "my-tasks-v3";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -82,6 +82,62 @@ self.addEventListener("fetch", (event) => {
         caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
         return response;
       });
+    }),
+  );
+});
+function getNotificationPayload(data = {}) {
+  return {
+    title: data.title || "Task completed",
+    options: {
+      body: data.body || "A task was marked as done.",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: data.tag || "task-completed",
+      renotify: true,
+      data: {
+        url: data.url || "/",
+      },
+    },
+  };
+}
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type !== "SHOW_TASK_NOTIFICATION") {
+    return;
+  }
+
+  const payload = getNotificationPayload(event.data.payload);
+  event.waitUntil(self.registration.showNotification(payload.title, payload.options));
+});
+
+self.addEventListener("push", (event) => {
+  let pushData = {};
+
+  try {
+    pushData = event.data ? event.data.json() : {};
+  } catch (_error) {
+    pushData = {
+      body: event.data?.text(),
+    };
+  }
+
+  const payload = getNotificationPayload(pushData);
+  event.waitUntil(self.registration.showNotification(payload.title, payload.options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      const matchingClient = clientList.find((client) => new URL(client.url).pathname === targetUrl);
+
+      if (matchingClient) {
+        return matchingClient.focus();
+      }
+
+      return self.clients.openWindow(targetUrl);
     }),
   );
 });
