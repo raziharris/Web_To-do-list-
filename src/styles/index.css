@@ -14,8 +14,13 @@
   color-scheme: dark;
   --parchment: #f6d895;
   --parchment-light: #ffeabb;
-  --wood: #4d2c17;
-  --wood-light: #c48a3d;
+  --wood: #3a2116;
+  --wood-light: #9a6a35;
+  --dark-panel: #4e3526;
+  --dark-panel-soft: #6b4a32;
+  --dark-text: #fff0c2;
+  --dark-muted: #e0bd7c;
+  --dark-highlight: #c7832f;
 }
 
 * {
@@ -214,7 +219,6 @@ button {
     opacity: 1;
   }
 
-
   .mobile-panel-badge {
     display: inline-grid;
     min-width: 28px;
@@ -241,23 +245,23 @@ button {
   .malaysia-time-pill {
     border-color: rgba(185, 138, 82, 0.3);
     background: rgba(255, 247, 216, 0.28);
-    color: #2f6d32;
+    color: #7a5124;
   }
 
   .dark .malaysia-time-bar {
-    border-color: rgba(255, 222, 156, 0.3);
+    border-color: rgba(255, 222, 156, 0.2);
     background:
-      linear-gradient(135deg, rgba(255, 231, 172, 0.18), transparent 58%),
-      rgba(58, 39, 55, 0.26);
+      linear-gradient(135deg, rgba(255, 207, 128, 0.1), transparent 58%),
+      rgba(76, 49, 31, 0.72);
     box-shadow:
-      0 0 0 1px rgba(255, 237, 182, 0.12) inset,
-      3px 3px 0 rgba(45, 27, 18, 0.18);
+      0 0 0 1px rgba(255, 219, 143, 0.08) inset,
+      3px 3px 0 rgba(28, 15, 12, 0.28);
   }
 
   .dark .malaysia-time-pill {
-    border-color: rgba(255, 222, 156, 0.28);
-    background: rgba(255, 231, 172, 0.24);
-    color: #285c34;
+    border-color: rgba(255, 222, 156, 0.18);
+    background: rgba(49, 31, 22, 0.36);
+    color: #ffe3a3;
   }
 
   .task-swipe-shell {
@@ -331,22 +335,43 @@ button {
   .dark .pixel-tabs,
   .dark .next-task-card {
     background:
-      linear-gradient(135deg, rgba(255, 245, 210, 0.28), transparent 46%),
-      #e1b764;
+      linear-gradient(135deg, rgba(255, 210, 128, 0.12), transparent 46%),
+      var(--dark-panel);
     box-shadow:
-      0 0 0 2px rgba(255, 237, 182, 0.36) inset,
-      4px 4px 0 rgba(45, 27, 18, 0.5);
+      0 0 0 2px rgba(255, 214, 142, 0.14) inset,
+      4px 4px 0 rgba(16, 10, 9, 0.64);
+    color: var(--dark-text);
   }
 
   .dark .pixel-row {
-    background: rgba(255, 231, 172, 0.9);
+    background: rgba(91, 60, 39, 0.92);
   }
 
   .dark .add-task-input {
     background:
-      linear-gradient(135deg, rgba(255, 249, 232, 0.34), transparent 48%),
-      linear-gradient(90deg, rgba(255, 238, 184, 0.52), rgba(219, 159, 76, 0.88)),
-      #d59649;
+      linear-gradient(135deg, rgba(255, 226, 166, 0.14), transparent 48%),
+      linear-gradient(90deg, rgba(133, 88, 44, 0.86), rgba(94, 61, 34, 0.9)),
+      #6f4828;
+  }
+
+  .dark .pixel-panel h1,
+  .dark .pixel-panel h2,
+  .dark .pixel-panel p,
+  .dark .pixel-panel span,
+  .dark .calendar-card-modern h2,
+  .dark .today-card-modern p {
+    color: inherit;
+  }
+
+  .dark .pixel-panel .text-\[\#241609\],
+  .dark .pixel-panel .text-\[\#2d1b0b\] {
+    color: var(--dark-text);
+  }
+
+  .dark .pixel-panel .text-\[\#7a5124\],
+  .dark .pixel-panel .text-\[\#8b6331\],
+  .dark .pixel-panel .text-\[\#9c7847\] {
+    color: var(--dark-muted);
   }
 
   .next-task-card {
@@ -748,24 +773,51 @@ button {
 .tree {
   position: absolute;
   bottom: 126px;
-  width: 92px;
-  height: 210px;
-  background: #6a4326;
-  box-shadow: inset 12px 0 rgba(138, 90, 40, 0.72);
+  width: 86px;
+  height: 198px;
+  border: 4px solid rgba(77, 45, 23, 0.72);
+  border-radius: 18px 18px 6px 6px;
+  background:
+    linear-gradient(90deg, rgba(52, 29, 14, 0.34) 0 10px, transparent 10px 32px, rgba(255, 210, 130, 0.16) 32px 44px, transparent 44px 100%),
+    repeating-linear-gradient(180deg, transparent 0 28px, rgba(68, 38, 18, 0.26) 28px 34px),
+    linear-gradient(90deg, #5d371f 0%, #8a5829 46%, #6a4326 100%);
+  box-shadow:
+    inset 10px 0 rgba(48, 28, 14, 0.25),
+    inset -8px 0 rgba(160, 104, 45, 0.22),
+    4px 5px 0 rgba(54, 32, 13, 0.26);
 }
 
 .tree::before {
   content: "";
   position: absolute;
-  left: -70px;
-  top: -110px;
-  width: 230px;
-  height: 170px;
+  left: -86px;
+  top: -132px;
+  width: 250px;
+  height: 184px;
   background:
-    radial-gradient(circle at 34% 42%, #9ccf57 0 24%, transparent 25%),
-    radial-gradient(circle at 58% 28%, #83ba4d 0 28%, transparent 29%),
-    radial-gradient(circle at 70% 56%, #6aa84a 0 30%, transparent 31%),
-    radial-gradient(circle at 28% 68%, #73ad4d 0 30%, transparent 31%);
+    radial-gradient(circle at 33% 54%, #73ad4d 0 23%, transparent 24%),
+    radial-gradient(circle at 42% 32%, #9ccf57 0 25%, transparent 26%),
+    radial-gradient(circle at 60% 28%, #83ba4d 0 27%, transparent 28%),
+    radial-gradient(circle at 73% 54%, #5f9f42 0 24%, transparent 25%),
+    radial-gradient(circle at 52% 67%, #6aa84a 0 28%, transparent 29%);
+  filter:
+    drop-shadow(5px 7px 0 rgba(36, 80, 35, 0.18))
+    drop-shadow(-2px 2px 0 rgba(218, 242, 139, 0.18));
+}
+
+.tree::after {
+  content: "";
+  position: absolute;
+  left: -52px;
+  top: -92px;
+  width: 188px;
+  height: 126px;
+  background:
+    linear-gradient(#d7f08a 0 0) 42px 30px / 20px 10px no-repeat,
+    linear-gradient(#d7f08a 0 0) 104px 20px / 22px 10px no-repeat,
+    linear-gradient(#4f8f3c 0 0) 124px 72px / 22px 12px no-repeat,
+    linear-gradient(#4f8f3c 0 0) 20px 82px / 22px 12px no-repeat;
+  opacity: 0.62;
 }
 
 .tree-left {
@@ -933,6 +985,33 @@ button {
   background: #4b2b16;
 }
 
+.dark .today-card-modern {
+  border: 2px solid rgba(255, 193, 91, 0.5);
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 193, 91, 0.32) 0 26px, transparent 27px),
+    linear-gradient(135deg, rgba(143, 86, 31, 0.96), rgba(73, 45, 28, 0.96));
+  box-shadow:
+    0 0 0 2px rgba(255, 224, 156, 0.08) inset,
+    0 20px 48px rgba(16, 10, 9, 0.38),
+    0 0 34px rgba(199, 131, 47, 0.18);
+  color: #fff3c7;
+}
+
+.dark .today-card-modern > div:first-child {
+  background: #2d1b12;
+  color: #ffd980;
+}
+
+.dark .today-card-modern span {
+  border-color: rgba(255, 216, 128, 0.32);
+  background: rgba(49, 31, 22, 0.42);
+  color: #ffe3a3;
+}
+
+.dark .today-card-modern p {
+  color: #fff3c7;
+}
+
 .calendar-card-modern {
   box-shadow: 0 14px 34px rgba(74, 49, 24, 0.12);
 }
@@ -948,11 +1027,22 @@ button {
 
 .dark .today-card-modern,
 .dark .calendar-card-modern {
-  border-color: rgba(255, 239, 196, 0.18);
+  border-color: rgba(255, 222, 156, 0.18);
   background:
-    linear-gradient(135deg, rgba(255, 235, 180, 0.66), rgba(225, 183, 100, 0.78)),
-    rgba(246, 216, 149, 0.88);
-  box-shadow: 0 18px 42px rgba(22, 13, 16, 0.24);
+    linear-gradient(135deg, rgba(125, 82, 40, 0.86), rgba(88, 57, 35, 0.9)),
+    rgba(75, 49, 31, 0.9);
+  box-shadow: 0 18px 42px rgba(22, 13, 16, 0.34);
+}
+
+.dark .today-card-modern {
+  border-color: rgba(255, 193, 91, 0.5);
+  background:
+    radial-gradient(circle at 88% 18%, rgba(255, 193, 91, 0.32) 0 26px, transparent 27px),
+    linear-gradient(135deg, rgba(143, 86, 31, 0.96), rgba(73, 45, 28, 0.96));
+  box-shadow:
+    0 0 0 2px rgba(255, 224, 156, 0.08) inset,
+    0 20px 48px rgba(16, 10, 9, 0.38),
+    0 0 34px rgba(199, 131, 47, 0.18);
 }
 
 @keyframes settle-progress-shine {

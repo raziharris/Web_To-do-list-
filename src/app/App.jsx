@@ -165,6 +165,7 @@ function createSkyClouds() {
     opacity: 0.28 + Math.random() * 0.36,
   }));
 }
+
 function canUseTaskNotifications() {
   return "Notification" in window && "serviceWorker" in navigator;
 }
@@ -552,6 +553,7 @@ function TodoApp() {
       console.warn("Could not save tasks to Supabase.", error);
     });
   }, [isRemoteReady, tasks]);
+
   function notifyTaskDone(task) {
     const lastNotificationTime = notifiedCompletedTasksRef.current.get(task.id) || 0;
     const now = Date.now();
@@ -563,6 +565,7 @@ function TodoApp() {
     notifiedCompletedTasksRef.current.set(task.id, now);
     showTaskNotification(task.title);
   }
+
   useEffect(() => {
     if (!isSupabaseConfigured) {
       return;
@@ -660,6 +663,7 @@ function TodoApp() {
   function toggleTheme() {
     setThemeOverride((currentOverride) => !(currentOverride ?? skyState.isDark));
   }
+
   async function enableTaskNotifications() {
     if (!canUseTaskNotifications()) {
       setNotificationPermission("unsupported");
@@ -793,7 +797,6 @@ function TodoApp() {
       <div className="pixel-garden" aria-hidden="true">
         <span className="tree tree-left" />
         <span className="tree tree-right" />
-        <span className="sign">Keep<br />Growing</span>
         <span className="fence fence-left" />
         <span className="fence fence-right" />
         <span className="path" />
@@ -917,7 +920,7 @@ function TodoApp() {
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex flex-wrap items-center gap-2">
                   <p className="text-[11px] uppercase leading-4 tracking-[0.08em] text-[#7a5124]">Focus now</p>
-                  <span className="inline-flex items-center gap-1 border-2 border-[#d4a661] bg-[#fff7d8] px-2 py-0.5 text-[10px] uppercase leading-4 text-[#2f6d32]">
+                  <span className="inline-flex items-center gap-1 border-2 border-[#d4a661] bg-[#fff7d8] px-2 py-0.5 text-[10px] uppercase leading-4 text-[#7a5124]">
                     <CalendarDays className="h-3 w-3" aria-hidden="true" />
                     {nextTask ? taskDateFormatter.format(new Date(`${nextTask.dueDate}T00:00:00`)) : "Clear"}
                   </span>
