@@ -18,21 +18,21 @@
 
 .dark {
   color-scheme: dark;
-  --parchment: #34472e;
-  --parchment-light: #425936;
-  --wood: #d5b469;
-  --wood-light: #88a866;
-  --panel-border: #b99652;
-  --panel-shadow: rgba(12, 18, 12, 0.42);
-  --accent-leaf: #a8c978;
-  --accent-sun: #f0c05b;
-  --dark-panel: #34472e;
-  --dark-panel-soft: #425936;
-  --dark-text: #fff5c9;
-  --dark-muted: #d8c585;
-  --dark-highlight: #f0c05b;
-  --text-main: #fff5c9;
-  --text-muted: #d8c585;
+  --parchment: #20382f;
+  --parchment-light: #2b4b3f;
+  --wood: #9fca95;
+  --wood-light: #6f9d72;
+  --panel-border: #8dbb82;
+  --panel-shadow: rgba(5, 13, 11, 0.46);
+  --accent-leaf: #9fca95;
+  --accent-sun: #ffd36e;
+  --dark-panel: #20382f;
+  --dark-panel-soft: #2b4b3f;
+  --dark-text: #fff7d6;
+  --dark-muted: #bed5a6;
+  --dark-highlight: #ffd36e;
+  --text-main: #fff7d6;
+  --text-muted: #bed5a6;
 }
 
 * {
@@ -263,18 +263,18 @@ button {
   }
 
   .dark .malaysia-time-bar {
-    border-color: rgba(213, 180, 105, 0.24);
+    border-color: rgba(159, 202, 149, 0.24);
     background:
-      linear-gradient(135deg, rgba(213, 180, 105, 0.12), transparent 58%),
-      rgba(52, 71, 46, 0.5);
+      linear-gradient(135deg, rgba(190, 213, 166, 0.12), transparent 58%),
+      rgba(32, 56, 47, 0.48);
     box-shadow:
-      0 0 0 1px rgba(255, 245, 201, 0.08) inset,
-      3px 3px 0 rgba(12, 18, 12, 0.26);
+      0 0 0 1px rgba(255, 247, 214, 0.08) inset,
+      3px 3px 0 rgba(5, 13, 11, 0.28);
   }
 
   .dark .malaysia-time-pill {
-    border-color: rgba(213, 180, 105, 0.22);
-    background: rgba(255, 245, 201, 0.12);
+    border-color: rgba(159, 202, 149, 0.24);
+    background: rgba(255, 247, 214, 0.11);
     color: var(--dark-muted);
   }
 
@@ -349,26 +349,65 @@ button {
   .dark .pixel-tabs,
   .dark .next-task-card {
     background:
-      linear-gradient(135deg, rgba(255, 245, 201, 0.08), transparent 46%),
-      linear-gradient(180deg, rgba(66, 89, 54, 0.95), rgba(49, 65, 43, 0.95)),
+      linear-gradient(135deg, rgba(255, 247, 214, 0.09), transparent 46%),
+      linear-gradient(180deg, rgba(43, 75, 63, 0.97), rgba(32, 56, 47, 0.97)),
       var(--dark-panel);
     box-shadow:
-      0 0 0 2px rgba(255, 245, 201, 0.1) inset,
+      0 0 0 2px rgba(255, 247, 214, 0.1) inset,
       4px 4px 0 var(--panel-shadow);
     color: var(--dark-text);
   }
 
   .dark .pixel-row {
-    border-color: rgba(213, 180, 105, 0.22);
-    background: rgba(58, 78, 50, 0.92);
+    border-color: rgba(159, 202, 149, 0.24);
+    background: rgba(36, 64, 53, 0.94);
   }
 
   .dark .add-task-input {
-    border-color: rgba(213, 180, 105, 0.38);
+    border-color: rgba(159, 202, 149, 0.36);
     background:
-      linear-gradient(135deg, rgba(255, 245, 201, 0.1), transparent 48%),
-      linear-gradient(90deg, rgba(75, 101, 62, 0.9), rgba(48, 65, 43, 0.92)),
-      #34472e;
+      linear-gradient(135deg, rgba(255, 247, 214, 0.1), transparent 48%),
+      linear-gradient(90deg, rgba(43, 75, 63, 0.94), rgba(28, 49, 42, 0.94)),
+      #20382f;
+  }
+
+  .dark .mobile-panel-dock {
+    border-color: rgba(159, 202, 149, 0.42);
+    background:
+      linear-gradient(135deg, rgba(255, 247, 214, 0.08), transparent 52%),
+      rgba(32, 56, 47, 0.82);
+    box-shadow:
+      0 0 0 2px rgba(255, 247, 214, 0.08) inset,
+      4px 4px 0 rgba(5, 13, 11, 0.34);
+  }
+
+  .dark .mobile-panel-tab {
+    color: var(--dark-text);
+  }
+
+  .dark .mobile-panel-tab[aria-current="page"] {
+    border-color: rgba(255, 211, 110, 0.58);
+    background: rgba(67, 101, 69, 0.94);
+  }
+
+  .dark .mobile-panel-badge {
+    border-color: rgba(159, 202, 149, 0.28);
+    background: rgba(255, 247, 214, 0.12);
+    color: var(--dark-highlight);
+  }
+
+  .dark .add-task-button {
+    border-color: rgba(255, 211, 110, 0.52);
+    background:
+      linear-gradient(135deg, rgba(255, 247, 214, 0.18), transparent 48%),
+      #d7b85d;
+    color: #20382f;
+  }
+
+  .dark .add-task-date {
+    border-color: rgba(159, 202, 149, 0.3);
+    background: rgba(255, 247, 214, 0.1);
+    color: var(--dark-muted);
   }
 
   .dark .pixel-panel h1,
@@ -577,6 +616,7 @@ button {
 }
 
 .cloud {
+  --cloud-scale: 1;
   position: absolute;
   width: 150px;
   height: 38px;
@@ -589,8 +629,10 @@ button {
     0 8px 0 rgba(221, 202, 156, 0.22),
     0 14px 22px rgba(66, 112, 137, 0.1);
   opacity: 0.7;
+  transform: translate3d(0, 0, 0) scale(var(--cloud-scale));
   animation: cloud-drift 18s ease-in-out infinite;
   filter: saturate(1.08);
+  will-change: transform;
 }
 
 .dark .cloud {
@@ -613,7 +655,7 @@ button {
 .cloud-right {
   right: 22px;
   top: 72px;
-  transform: scale(0.75);
+  --cloud-scale: 0.75;
   animation-duration: 23s;
   animation-delay: -6s;
 }
@@ -734,6 +776,8 @@ button {
 
 .pond::before,
 .pond::after {
+  --fish-direction: 1;
+  --fish-size: 1;
   content: "";
   position: absolute;
   z-index: 1;
@@ -751,6 +795,7 @@ button {
   filter: drop-shadow(2px 2px 0 rgba(28, 72, 86, 0.22));
   opacity: 0.92;
   animation: fish-swim 10s linear infinite;
+  will-change: transform;
 }
 
 .pond::before {
@@ -759,6 +804,8 @@ button {
 }
 
 .pond::after {
+  --fish-direction: -1;
+  --fish-size: 0.92;
   left: 70%;
   top: 58px;
   background:
@@ -769,7 +816,6 @@ button {
     linear-gradient(90deg, #8ee5e9 0 9px, #55c1d8 9px 28px, #2f93c7 28px 34px) 5px 6px / 32px 10px no-repeat,
     linear-gradient(#e3fbff 0 0) 12px 4px / 18px 2px no-repeat,
     linear-gradient(#2f93c7 0 0) 12px 16px / 18px 2px no-repeat;
-  transform: scaleX(-1) scale(0.92);
   animation-name: fish-swim-back;
   animation-duration: 12s;
   animation-delay: -4s;
@@ -922,6 +968,7 @@ button {
   transform-origin: center;
   animation: bird-flight var(--bird-duration) linear infinite;
   animation-delay: var(--bird-delay);
+  will-change: transform;
 }
 
 .pixel-bird-body,
@@ -944,6 +991,7 @@ button {
   width: 18px;
   height: 6px;
   animation: bird-flap 0.72s steps(2, end) infinite;
+  will-change: transform;
 }
 
 .pixel-bird-wing-left {
@@ -1003,25 +1051,25 @@ button {
 }
 
 .dark .today-card-modern {
-  border: 2px solid rgba(213, 180, 105, 0.38);
+  border: 2px solid rgba(159, 202, 149, 0.36);
   background:
-    radial-gradient(circle at 88% 18%, rgba(240, 192, 91, 0.18) 0 26px, transparent 27px),
-    linear-gradient(135deg, rgba(73, 99, 58, 0.96), rgba(44, 61, 39, 0.96));
+    radial-gradient(circle at 88% 18%, rgba(255, 211, 110, 0.16) 0 26px, transparent 27px),
+    linear-gradient(135deg, rgba(43, 75, 63, 0.97), rgba(28, 49, 42, 0.97));
   box-shadow:
-    0 0 0 2px rgba(255, 245, 201, 0.08) inset,
-    0 20px 48px rgba(12, 18, 12, 0.38),
-    0 0 34px rgba(168, 201, 120, 0.1);
+    0 0 0 2px rgba(255, 247, 214, 0.08) inset,
+    0 20px 48px rgba(5, 13, 11, 0.38),
+    0 0 34px rgba(159, 202, 149, 0.1);
   color: var(--dark-text);
 }
 
 .dark .today-card-modern > div:first-child {
-  background: #26351f;
+  background: #182d26;
   color: var(--dark-highlight);
 }
 
 .dark .today-card-modern span {
-  border-color: rgba(213, 180, 105, 0.28);
-  background: rgba(255, 245, 201, 0.1);
+  border-color: rgba(159, 202, 149, 0.26);
+  background: rgba(255, 247, 214, 0.1);
   color: var(--dark-muted);
 }
 
@@ -1044,22 +1092,22 @@ button {
 
 .dark .today-card-modern,
 .dark .calendar-card-modern {
-  border-color: rgba(213, 180, 105, 0.22);
+  border-color: rgba(159, 202, 149, 0.24);
   background:
-    linear-gradient(135deg, rgba(66, 89, 54, 0.9), rgba(44, 61, 39, 0.92)),
-    rgba(49, 65, 43, 0.9);
-  box-shadow: 0 18px 42px rgba(12, 18, 12, 0.34);
+    linear-gradient(135deg, rgba(43, 75, 63, 0.94), rgba(28, 49, 42, 0.94)),
+    rgba(32, 56, 47, 0.92);
+  box-shadow: 0 18px 42px rgba(5, 13, 11, 0.34);
 }
 
 .dark .today-card-modern {
-  border-color: rgba(213, 180, 105, 0.38);
+  border-color: rgba(159, 202, 149, 0.36);
   background:
-    radial-gradient(circle at 88% 18%, rgba(240, 192, 91, 0.18) 0 26px, transparent 27px),
-    linear-gradient(135deg, rgba(73, 99, 58, 0.96), rgba(44, 61, 39, 0.96));
+    radial-gradient(circle at 88% 18%, rgba(255, 211, 110, 0.16) 0 26px, transparent 27px),
+    linear-gradient(135deg, rgba(43, 75, 63, 0.97), rgba(28, 49, 42, 0.97));
   box-shadow:
-    0 0 0 2px rgba(255, 245, 201, 0.08) inset,
-    0 20px 48px rgba(12, 18, 12, 0.38),
-    0 0 34px rgba(168, 201, 120, 0.1);
+    0 0 0 2px rgba(255, 247, 214, 0.08) inset,
+    0 20px 48px rgba(5, 13, 11, 0.38),
+    0 0 34px rgba(159, 202, 149, 0.1);
 }
 
 @keyframes settle-progress-shine {
@@ -1089,48 +1137,48 @@ button {
 
 @keyframes bird-flight {
   0% {
-    translate: -8vw 0;
+    transform: translate3d(-8vw, 0, 0) scale(var(--bird-scale));
   }
   22% {
-    translate: 22vw -10px;
+    transform: translate3d(22vw, -10px, 0) scale(var(--bird-scale));
   }
   50% {
-    translate: 52vw 8px;
+    transform: translate3d(52vw, 8px, 0) scale(var(--bird-scale));
   }
   76% {
-    translate: 78vw -6px;
+    transform: translate3d(78vw, -6px, 0) scale(var(--bird-scale));
   }
   100% {
-    translate: 112vw 2px;
+    transform: translate3d(112vw, 2px, 0) scale(var(--bird-scale));
   }
 }
 
 @keyframes bird-flap {
   0%,
   100% {
-    translate: 0 0;
+    transform: translate3d(0, 0, 0);
   }
   50% {
-    translate: 0 -5px;
+    transform: translate3d(0, -5px, 0);
   }
 }
 
 @keyframes cloud-cross {
   0% {
-    transform: translateX(-24vw) scale(var(--cloud-scale));
+    transform: translate3d(-24vw, 0, 0) scale(var(--cloud-scale));
   }
   100% {
-    transform: translateX(128vw) scale(var(--cloud-scale));
+    transform: translate3d(128vw, 0, 0) scale(var(--cloud-scale));
   }
 }
 
 @keyframes cloud-drift {
   0%,
   100% {
-    translate: 0 0;
+    transform: translate3d(0, 0, 0) scale(var(--cloud-scale));
   }
   50% {
-    translate: 14px 0;
+    transform: translate3d(14px, 0, 0) scale(var(--cloud-scale));
   }
 }
 
@@ -1165,25 +1213,25 @@ button {
 
 @keyframes fish-swim {
   0% {
-    translate: -18vw 0;
+    transform: translate3d(-18vw, 0, 0) scaleX(var(--fish-direction)) scale(var(--fish-size));
   }
   50% {
-    translate: 48vw 5px;
+    transform: translate3d(48vw, 5px, 0) scaleX(var(--fish-direction)) scale(var(--fish-size));
   }
   100% {
-    translate: 118vw -2px;
+    transform: translate3d(118vw, -2px, 0) scaleX(var(--fish-direction)) scale(var(--fish-size));
   }
 }
 
 @keyframes fish-swim-back {
   0% {
-    translate: 24vw 2px;
+    transform: translate3d(24vw, 2px, 0) scaleX(var(--fish-direction)) scale(var(--fish-size));
   }
   50% {
-    translate: -42vw -4px;
+    transform: translate3d(-42vw, -4px, 0) scaleX(var(--fish-direction)) scale(var(--fish-size));
   }
   100% {
-    translate: -106vw 3px;
+    transform: translate3d(-106vw, 3px, 0) scaleX(var(--fish-direction)) scale(var(--fish-size));
   }
 }
 
@@ -1256,13 +1304,13 @@ button {
   .cloud-left {
     left: -56px;
     top: 72px;
-    transform: scale(0.74);
+    --cloud-scale: 0.74;
   }
 
   .cloud-right {
     right: -58px;
     top: 112px;
-    transform: scale(0.58);
+    --cloud-scale: 0.58;
   }
 
   .tree-left,

@@ -43,6 +43,7 @@ const FACE_ID_CREDENTIAL_KEY = "my-tasks-face-id-credential";
 const FACE_ID_USER_KEY = "my-tasks-face-id-user";
 const REMOTE_MIGRATION_KEY = "my-tasks-remote-migrated";
 const TASK_NOTIFICATION_KEY = "my-tasks-notification-enabled";
+const NOTIFICATION_READY_TIMEOUT_MS = 1200;
 const SITE_PASSWORD_HASH = "9e468432d7dde30ef9c431eb88b6951b2928dc337b88f349a5db9d124b88bada";
 const MALAYSIA_TIME_ZONE = "Asia/Kuala_Lumpur";
 const gardenCompanions = [
@@ -167,7 +168,7 @@ function createSkyClouds() {
 }
 
 function canUseTaskNotifications() {
-  return "Notification" in window && "serviceWorker" in navigator;
+  return "Notification" in window;
 }
 
 async function showTaskNotification(taskTitle) {
@@ -182,24 +183,28 @@ async function showTaskNotification(taskTitle) {
     url: "/",
   };
 
-  try {
-    const registration = await navigator.serviceWorker.ready;
+  const notificationOptions = {
+    body: payload.body,
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    tag: payload.tag,
+    data: { url: payload.url },
+  };
 
-    if (registration.active) {
-      registration.active.postMessage({
-        type: "SHOW_TASK_NOTIFICATION",
-        payload,
-      });
-      return;
+  try {
+    if ("serviceWorker" in navigator) {
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((resolve) => window.setTimeout(() => resolve(null), NOTIFICATION_READY_TIMEOUT_MS)),
+      ]);
+
+      if (registration) {
+        await registration.showNotification(payload.title, notificationOptions);
+        return;
+      }
     }
 
-    await registration.showNotification(payload.title, {
-      body: payload.body,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
-      tag: payload.tag,
-      data: { url: payload.url },
-    });
+    new Notification(payload.title, notificationOptions);
   } catch (error) {
     console.warn("Could not show task notification.", error);
   }
