@@ -146,7 +146,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
               >
                 {task.title}
               </p>
-              <span className="mt-1 inline-flex border-2 border-[#d4a661] bg-[#fff7d8] px-2 py-0.5 text-[10px] font-bold uppercase leading-4 text-[#7a5124] sm:hidden">
+              <span className="task-date-chip mt-1 inline-flex border-2 px-2 py-0.5 text-[10px] font-bold uppercase leading-4 sm:hidden">
                 {formatTaskDate(task.dueDate)}
               </span>
             </motion.div>
@@ -154,7 +154,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
         </AnimatePresence>
       </div>
 
-      <span className="hidden min-w-[112px] text-right text-sm font-bold text-[#8b6331] sm:inline-block">
+      <span className="task-date-text hidden min-w-[112px] text-right text-sm font-bold sm:inline-block">
         {formatTaskDate(task.dueDate)}
       </span>
 

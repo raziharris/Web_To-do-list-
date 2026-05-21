@@ -178,7 +178,7 @@ async function showTaskNotification(taskTitle) {
 
   const payload = {
     title: "Task completed",
-    body: taskTitle ? `"${taskTitle}" is done.` : "A task was marked as done.",
+    body: taskTitle ? `Completed: ${taskTitle}` : "A task was marked as completed.",
     tag: `task-completed-${Date.now()}`,
     url: "/",
   };
@@ -495,9 +495,17 @@ function TodoApp() {
   const [notificationPermission, setNotificationPermission] = useState(() =>
     canUseTaskNotifications() ? Notification.permission : "unsupported",
   );
+  const [taskNotificationsEnabled, setTaskNotificationsEnabled] = useState(() => {
+    return (
+      canUseTaskNotifications() &&
+      Notification.permission === "granted" &&
+      localStorage.getItem(TASK_NOTIFICATION_KEY) === "true"
+    );
+  });
   const [themeOverride, setThemeOverride] = useState(null);
   const applyingRemoteTasksRef = useRef(false);
   const notifiedCompletedTasksRef = useRef(new Map());
+  const taskNotificationsEnabledRef = useRef(taskNotificationsEnabled);
   const tasksRef = useRef(tasks);
   const characterSafeSpace = 132;
   const isDark = themeOverride ?? skyState.isDark;
@@ -521,6 +529,14 @@ function TodoApp() {
   const selectedDateTaskCount = useMemo(() => {
     return tasks.filter((task) => task.dueDate === selectedDate).length;
   }, [selectedDate, tasks]);
+  const notificationButtonLabel =
+    notificationPermission === "unsupported"
+      ? "Off"
+      : notificationPermission === "denied"
+        ? "Blocked"
+        : taskNotificationsEnabled
+          ? "On"
+          : "Turn on";
 
   const filteredTasks = useMemo(() => {
     let visibleTasks = tasks;
@@ -543,6 +559,10 @@ function TodoApp() {
   }, [tasks]);
 
   useEffect(() => {
+    taskNotificationsEnabledRef.current = taskNotificationsEnabled;
+  }, [taskNotificationsEnabled]);
+
+  useEffect(() => {
     saveTasks(tasks);
 
     if (applyingRemoteTasksRef.current) {
@@ -560,6 +580,10 @@ function TodoApp() {
   }, [isRemoteReady, tasks]);
 
   function notifyTaskDone(task) {
+    if (!taskNotificationsEnabledRef.current || Notification.permission !== "granted") {
+      return;
+    }
+
     const lastNotificationTime = notifiedCompletedTasksRef.current.get(task.id) || 0;
     const now = Date.now();
 
@@ -569,6 +593,16 @@ function TodoApp() {
 
     notifiedCompletedTasksRef.current.set(task.id, now);
     showTaskNotification(task.title);
+  }
+
+  function notifyCompletedTasksFromRemote(remoteTasks) {
+    remoteTasks.forEach((remoteTask) => {
+      const previousTask = tasksRef.current.find((task) => task.id === remoteTask.id);
+
+      if (previousTask?.completed === false && remoteTask.completed === true) {
+        notifyTaskDone(remoteTask);
+      }
+    });
   }
 
   useEffect(() => {
@@ -590,6 +624,10 @@ function TodoApp() {
 
         if (!isMounted) {
           return;
+        }
+
+        if (!mergeLocalTasks) {
+          notifyCompletedTasksFromRemote(remoteTasks);
         }
 
         applyingRemoteTasksRef.current = true;
@@ -672,12 +710,16 @@ function TodoApp() {
   async function enableTaskNotifications() {
     if (!canUseTaskNotifications()) {
       setNotificationPermission("unsupported");
+      taskNotificationsEnabledRef.current = false;
+      setTaskNotificationsEnabled(false);
       return;
     }
 
     if (Notification.permission === "granted") {
       setNotificationPermission("granted");
-      showTaskNotification("Notifications are working");
+      localStorage.setItem(TASK_NOTIFICATION_KEY, "true");
+      taskNotificationsEnabledRef.current = true;
+      setTaskNotificationsEnabled(true);
       return;
     }
 
@@ -686,8 +728,13 @@ function TodoApp() {
 
     if (nextPermission === "granted") {
       localStorage.setItem(TASK_NOTIFICATION_KEY, "true");
-      showTaskNotification("Notifications are enabled");
+      taskNotificationsEnabledRef.current = true;
+      setTaskNotificationsEnabled(true);
+      return;
     }
+
+    taskNotificationsEnabledRef.current = false;
+    setTaskNotificationsEnabled(false);
   }
 
   function showCompletionReaction(taskId) {
@@ -833,9 +880,25 @@ function TodoApp() {
               {malaysiaDateLabel}
             </p>
           </div>
-          <time className="malaysia-time-pill shrink-0 border-2 px-2 py-1 text-sm font-bold uppercase sm:px-3 sm:text-base">
-            {malaysiaTimeLabel}
-          </time>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={enableTaskNotifications}
+              disabled={notificationPermission === "unsupported"}
+              className="focus-ring inline-flex min-h-10 min-w-[82px] items-center justify-center gap-1.5 border-2 border-[#74a85d] bg-[#fffdf1] px-3 text-[11px] font-bold uppercase text-[#3d6d37] shadow-pixel transition hover:-translate-y-0.5 hover:bg-[#edf4c9] active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0 disabled:active:shadow-pixel"
+              aria-label={
+                notificationPermission === "granted"
+                  ? "Task completion notifications are on"
+                  : "Enable task completion notifications"
+              }
+            >
+              <BellRing className="h-4 w-4" aria-hidden="true" />
+              <span>{notificationButtonLabel}</span>
+            </button>
+            <time className="malaysia-time-pill shrink-0 border-2 px-2 py-1 text-sm font-bold uppercase sm:px-3 sm:text-base">
+              {malaysiaTimeLabel}
+            </time>
+          </div>
         </div>
 
         <nav className="mobile-panel-dock sticky top-3 z-30 mb-4 grid w-full max-w-[430px] grid-cols-3 gap-2 lg:hidden" aria-label="Mobile task panels">
@@ -896,21 +959,7 @@ function TodoApp() {
                 </button>
               </div>
 
-              <div className="mb-2 flex items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#7a5124]">
-                <button
-                  type="button"
-                  onClick={enableTaskNotifications}
-                  disabled={notificationPermission === "unsupported"}
-                  className="focus-ring inline-flex min-h-8 items-center gap-1 border-2 border-[#93b56f] bg-[#fffdf1]/70 px-2 text-[10px] font-bold text-[#49623a] shadow-pixel transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0"
-                  aria-label={
-                    notificationPermission === "granted"
-                      ? "Send a test task completion notification"
-                      : "Enable task completion notifications"
-                  }
-                >
-                  <BellRing className="h-3.5 w-3.5" aria-hidden="true" />
-                  {notificationPermission === "granted" ? "On" : "Notify"}
-                </button>
+              <div className="mb-2 flex items-center justify-end gap-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#7a5124]">
                 <span>{pendingCount} left</span>
               </div>
               <div

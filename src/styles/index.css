@@ -18,21 +18,21 @@
 
 .dark {
   color-scheme: dark;
-  --parchment: #20382f;
-  --parchment-light: #2b4b3f;
-  --wood: #9fca95;
-  --wood-light: #6f9d72;
-  --panel-border: #8dbb82;
-  --panel-shadow: rgba(5, 13, 11, 0.46);
-  --accent-leaf: #9fca95;
-  --accent-sun: #ffd36e;
-  --dark-panel: #20382f;
-  --dark-panel-soft: #2b4b3f;
-  --dark-text: #fff7d6;
-  --dark-muted: #bed5a6;
-  --dark-highlight: #ffd36e;
-  --text-main: #fff7d6;
-  --text-muted: #bed5a6;
+  --parchment: #14241f;
+  --parchment-light: #21382f;
+  --wood: #f2d27b;
+  --wood-light: #bddaa5;
+  --panel-border: #d8c270;
+  --panel-shadow: rgba(3, 9, 8, 0.54);
+  --accent-leaf: #9bd184;
+  --accent-sun: #ffd66f;
+  --dark-panel: #14241f;
+  --dark-panel-soft: #21382f;
+  --dark-text: #fff8d7;
+  --dark-muted: #d9e8bc;
+  --dark-highlight: #ffd66f;
+  --text-main: #fff8d7;
+  --text-muted: #d9e8bc;
 }
 
 * {
@@ -205,6 +205,17 @@ button {
     background: rgba(255, 253, 241, 0.9);
   }
 
+  .task-date-chip {
+    border-color: #b88947;
+    background: #fffdf1;
+    color: #111111;
+    box-shadow: 2px 2px 0 rgba(45, 78, 42, 0.12);
+  }
+
+  .task-date-text {
+    color: #111111;
+  }
+
   .mobile-panel-dock {
     padding: 6px;
     border: 3px solid rgba(111, 141, 83, 0.7);
@@ -243,6 +254,7 @@ button {
     padding: 0 5px;
     font-size: 10px;
     line-height: 1;
+    color: #3b2410;
   }
 
   .malaysia-time-bar {
@@ -348,66 +360,103 @@ button {
   .dark .pixel-input,
   .dark .pixel-tabs,
   .dark .next-task-card {
+    border-color: rgba(216, 194, 112, 0.64);
     background:
-      linear-gradient(135deg, rgba(255, 247, 214, 0.09), transparent 46%),
-      linear-gradient(180deg, rgba(43, 75, 63, 0.97), rgba(32, 56, 47, 0.97)),
+      linear-gradient(135deg, rgba(255, 214, 111, 0.12), transparent 48%),
+      linear-gradient(180deg, rgba(33, 56, 47, 0.98), rgba(20, 36, 31, 0.98)),
       var(--dark-panel);
     box-shadow:
-      0 0 0 2px rgba(255, 247, 214, 0.1) inset,
+      0 0 0 2px rgba(255, 248, 215, 0.1) inset,
       4px 4px 0 var(--panel-shadow);
     color: var(--dark-text);
   }
 
   .dark .pixel-row {
-    border-color: rgba(159, 202, 149, 0.24);
-    background: rgba(36, 64, 53, 0.94);
-  }
-
-  .dark .add-task-input {
-    border-color: rgba(159, 202, 149, 0.36);
-    background:
-      linear-gradient(135deg, rgba(255, 247, 214, 0.1), transparent 48%),
-      linear-gradient(90deg, rgba(43, 75, 63, 0.94), rgba(28, 49, 42, 0.94)),
-      #20382f;
-  }
-
-  .dark .mobile-panel-dock {
-    border-color: rgba(159, 202, 149, 0.42);
-    background:
-      linear-gradient(135deg, rgba(255, 247, 214, 0.08), transparent 52%),
-      rgba(32, 56, 47, 0.82);
-    box-shadow:
-      0 0 0 2px rgba(255, 247, 214, 0.08) inset,
-      4px 4px 0 rgba(5, 13, 11, 0.34);
-  }
-
-  .dark .mobile-panel-tab {
+    border-color: rgba(216, 194, 112, 0.32);
+    background: rgba(24, 45, 38, 0.96);
     color: var(--dark-text);
   }
 
+  .dark .task-active:hover {
+    background:
+      linear-gradient(90deg, rgba(255, 214, 111, 0.14), transparent 34%),
+      rgba(31, 58, 48, 0.98);
+  }
+
+  .dark .task-active p {
+    color: #fff8d7;
+  }
+
+  .dark .task-complete p {
+    color: #d9e8bc;
+  }
+
+  .dark .add-task-input {
+    border-color: rgba(216, 194, 112, 0.5);
+    background:
+      linear-gradient(135deg, rgba(255, 214, 111, 0.13), transparent 48%),
+      linear-gradient(90deg, rgba(30, 54, 46, 0.97), rgba(18, 32, 28, 0.97)),
+      #14241f;
+    color: #fff8d7;
+  }
+
+  .dark .mobile-panel-dock {
+    border-color: rgba(216, 194, 112, 0.64);
+    background:
+      linear-gradient(135deg, rgba(255, 214, 111, 0.12), transparent 52%),
+      rgba(20, 36, 31, 0.9);
+    box-shadow:
+      0 0 0 2px rgba(255, 248, 215, 0.1) inset,
+      4px 4px 0 rgba(3, 9, 8, 0.42);
+  }
+
+  .dark .mobile-panel-tab {
+    border-color: rgba(216, 194, 112, 0.55);
+    background: #fff8d7;
+    color: #14241f;
+  }
+
   .dark .mobile-panel-tab[aria-current="page"] {
-    border-color: rgba(255, 211, 110, 0.58);
-    background: rgba(67, 101, 69, 0.94);
+    border-color: #ffd66f;
+    background: #2f5d43;
+    color: #fff8d7;
   }
 
   .dark .mobile-panel-badge {
-    border-color: rgba(159, 202, 149, 0.28);
-    background: rgba(255, 247, 214, 0.12);
-    color: var(--dark-highlight);
+    border-color: rgba(20, 36, 31, 0.34);
+    background: #fff8d7;
+    color: #14241f;
+  }
+
+  .dark .mobile-panel-tab[aria-current="page"] .mobile-panel-badge {
+    border-color: rgba(255, 214, 111, 0.58);
+    background: #fff8d7;
+    color: #14241f;
+  }
+
+  .dark .task-date-chip {
+    border-color: #d09a36;
+    background: #fff8d7;
+    color: #111111;
+    box-shadow: 2px 2px 0 rgba(3, 9, 8, 0.28);
+  }
+
+  .dark .task-date-text {
+    color: #ffd66f;
   }
 
   .dark .add-task-button {
-    border-color: rgba(255, 211, 110, 0.52);
+    border-color: rgba(255, 214, 111, 0.68);
     background:
-      linear-gradient(135deg, rgba(255, 247, 214, 0.18), transparent 48%),
-      #d7b85d;
-    color: #20382f;
+      linear-gradient(135deg, rgba(255, 248, 215, 0.22), transparent 48%),
+      #ffd66f;
+    color: #14241f;
   }
 
   .dark .add-task-date {
-    border-color: rgba(159, 202, 149, 0.3);
-    background: rgba(255, 247, 214, 0.1);
-    color: var(--dark-muted);
+    border-color: rgba(255, 214, 111, 0.44);
+    background: rgba(255, 248, 215, 0.12);
+    color: #fff8d7;
   }
 
   .dark .pixel-panel h1,
@@ -428,6 +477,14 @@ button {
   .dark .pixel-panel .text-\[\#8b6331\],
   .dark .pixel-panel .text-\[\#9c7847\] {
     color: var(--dark-muted);
+  }
+
+  .dark .pixel-panel .task-date-chip {
+    color: #111111;
+  }
+
+  .dark .pixel-panel .task-date-text {
+    color: #ffd66f;
   }
 
   .next-task-card {
@@ -1051,25 +1108,25 @@ button {
 }
 
 .dark .today-card-modern {
-  border: 2px solid rgba(159, 202, 149, 0.36);
+  border: 2px solid rgba(216, 194, 112, 0.5);
   background:
-    radial-gradient(circle at 88% 18%, rgba(255, 211, 110, 0.16) 0 26px, transparent 27px),
-    linear-gradient(135deg, rgba(43, 75, 63, 0.97), rgba(28, 49, 42, 0.97));
+    radial-gradient(circle at 88% 18%, rgba(255, 214, 111, 0.18) 0 26px, transparent 27px),
+    linear-gradient(135deg, rgba(33, 56, 47, 0.98), rgba(20, 36, 31, 0.98));
   box-shadow:
-    0 0 0 2px rgba(255, 247, 214, 0.08) inset,
-    0 20px 48px rgba(5, 13, 11, 0.38),
-    0 0 34px rgba(159, 202, 149, 0.1);
+    0 0 0 2px rgba(255, 248, 215, 0.1) inset,
+    0 20px 48px rgba(3, 9, 8, 0.42),
+    0 0 34px rgba(255, 214, 111, 0.08);
   color: var(--dark-text);
 }
 
 .dark .today-card-modern > div:first-child {
-  background: #182d26;
+  background: #0f1d19;
   color: var(--dark-highlight);
 }
 
 .dark .today-card-modern span {
-  border-color: rgba(159, 202, 149, 0.26);
-  background: rgba(255, 247, 214, 0.1);
+  border-color: rgba(216, 194, 112, 0.34);
+  background: rgba(255, 248, 215, 0.12);
   color: var(--dark-muted);
 }
 
@@ -1092,22 +1149,27 @@ button {
 
 .dark .today-card-modern,
 .dark .calendar-card-modern {
-  border-color: rgba(159, 202, 149, 0.24);
+  border-color: rgba(216, 194, 112, 0.38);
   background:
-    linear-gradient(135deg, rgba(43, 75, 63, 0.94), rgba(28, 49, 42, 0.94)),
-    rgba(32, 56, 47, 0.92);
-  box-shadow: 0 18px 42px rgba(5, 13, 11, 0.34);
+    linear-gradient(135deg, rgba(33, 56, 47, 0.97), rgba(20, 36, 31, 0.97)),
+    rgba(20, 36, 31, 0.94);
+  box-shadow: 0 18px 42px rgba(3, 9, 8, 0.38);
+  color: var(--dark-text);
+}
+
+.dark .calendar-card-modern button {
+  color: #fff8d7;
 }
 
 .dark .today-card-modern {
-  border-color: rgba(159, 202, 149, 0.36);
+  border-color: rgba(216, 194, 112, 0.5);
   background:
-    radial-gradient(circle at 88% 18%, rgba(255, 211, 110, 0.16) 0 26px, transparent 27px),
-    linear-gradient(135deg, rgba(43, 75, 63, 0.97), rgba(28, 49, 42, 0.97));
+    radial-gradient(circle at 88% 18%, rgba(255, 214, 111, 0.18) 0 26px, transparent 27px),
+    linear-gradient(135deg, rgba(33, 56, 47, 0.98), rgba(20, 36, 31, 0.98));
   box-shadow:
-    0 0 0 2px rgba(255, 247, 214, 0.08) inset,
-    0 20px 48px rgba(5, 13, 11, 0.38),
-    0 0 34px rgba(159, 202, 149, 0.1);
+    0 0 0 2px rgba(255, 248, 215, 0.1) inset,
+    0 20px 48px rgba(3, 9, 8, 0.42),
+    0 0 34px rgba(255, 214, 111, 0.08);
 }
 
 @keyframes settle-progress-shine {
