@@ -10,53 +10,7 @@ export function formatDateKey(date = new Date()) {
 }
 
 export function createDefaultTasks() {
-  return [
-    {
-      id: crypto.randomUUID(),
-      title: "Design new landing page",
-      completed: false,
-      priority: "Work",
-      time: "9:00 AM",
-      dueDate: formatDateKey(),
-      createdAt: Date.now() - 1,
-    },
-    {
-      id: crypto.randomUUID(),
-      title: "Update project documentation",
-      completed: false,
-      priority: "Work",
-      time: "11:30 AM",
-      dueDate: formatDateKey(),
-      createdAt: Date.now() - 2,
-    },
-    {
-      id: crypto.randomUUID(),
-      title: "Reply to client emails",
-      completed: false,
-      priority: "Work",
-      time: "1:00 PM",
-      dueDate: formatDateKey(),
-      createdAt: Date.now() - 3,
-    },
-    {
-      id: crypto.randomUUID(),
-      title: "Study Japanese for 30 minutes",
-      completed: true,
-      priority: "Personal",
-      time: "4:00 PM",
-      dueDate: formatDateKey(),
-      createdAt: Date.now() - 4,
-    },
-    {
-      id: crypto.randomUUID(),
-      title: "Read a book",
-      completed: false,
-      priority: "Personal",
-      time: "8:00 PM",
-      dueDate: formatDateKey(),
-      createdAt: Date.now() - 5,
-    },
-  ];
+  return [];
 }
 
 export function hasStoredTasks() {
