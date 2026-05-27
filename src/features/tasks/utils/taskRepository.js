@@ -70,3 +70,11 @@ export async function clearTasksFromSupabase() {
     throw error;
   }
 }
+
+export async function clearCompletedTasksFromSupabase() {
+  const { error } = await supabase.from(TASKS_TABLE).delete().eq("completed", true);
+
+  if (error) {
+    throw error;
+  }
+}

@@ -354,21 +354,46 @@ button {
     color: #3d6d37;
   }
 
-  .notification-toggle-floating {
+  .notification-toggle-group {
     position: absolute;
     top: max(10px, env(safe-area-inset-top, 0px));
     right: max(10px, env(safe-area-inset-right, 0px));
     z-index: 45;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     opacity: 0.48;
+  }
+
+  .notification-toggle-group:hover {
+    opacity: 0.92;
   }
 
   .notification-toggle:hover {
     background: #edf4c9;
-    opacity: 0.92;
   }
 
   .notification-toggle:disabled {
     opacity: 0.26;
+  }
+
+  .background-notification-status {
+    position: absolute;
+    top: calc(max(10px, env(safe-area-inset-top, 0px)) + 38px);
+    right: max(10px, env(safe-area-inset-right, 0px));
+    z-index: 44;
+    max-width: min(260px, calc(100vw - 20px));
+    border: 2px solid rgba(116, 168, 93, 0.55);
+    background: rgba(255, 253, 241, 0.72);
+    padding: 4px 6px;
+    color: #3d6d37;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.25;
+    opacity: 0.56;
+    pointer-events: none;
+    text-align: right;
+    text-transform: uppercase;
   }
 
   .malaysia-time-pill {

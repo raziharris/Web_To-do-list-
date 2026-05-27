@@ -1,4 +1,4 @@
-const CACHE_NAME = "my-tasks-v3";
+const CACHE_NAME = "my-tasks-v4";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -86,13 +86,16 @@ self.addEventListener("fetch", (event) => {
   );
 });
 function getNotificationPayload(data = {}) {
+  const notificationType = data.type || "completed";
+  const isCreatedNotification = notificationType === "created";
+
   return {
-    title: data.title || "Task completed",
+    title: data.title || (isCreatedNotification ? "New task added" : "Task completed"),
     options: {
-      body: data.body || "A task was marked as done.",
+      body: data.body || (isCreatedNotification ? "A new task was added." : "A task was marked as done."),
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
-      tag: data.tag || "task-completed",
+      tag: data.tag || `task-${notificationType}`,
       renotify: true,
       data: {
         url: data.url || "/",

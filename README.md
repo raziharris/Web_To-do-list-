@@ -23,11 +23,25 @@ Tasks are saved in Supabase when the app is configured with Supabase environment
 ```bash
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+VITE_VAPID_PUBLIC_KEY=your-web-push-public-key
 ```
 
 Restart the dev server after changing env variables.
 
 When Supabase is configured, the app merges any tasks already saved in this browser into Supabase on first load. That keeps your existing list from disappearing when you move the same site to Vercel.
+
+## Task notifications
+
+Use the bell button in the app to allow task notifications on each device. When Supabase Realtime is connected, another open device receives a notification when someone adds a task or marks a task completed.
+
+Use the `Bg` button to subscribe this device for background Web Push. This needs:
+
+- `VITE_VAPID_PUBLIC_KEY` in the frontend
+- `WEB_PUSH_PUBLIC_KEY`, `WEB_PUSH_PRIVATE_KEY`, and `WEB_PUSH_SUBJECT` on the Supabase Edge Function
+- the `notify-task-change` Supabase Edge Function deployed
+- the `push_subscriptions` table from `supabase/schema.sql` or migrations
+
+On iPhone, closed-app web push requires the site to be installed to the Home Screen and notifications allowed. If the Home Screen app was removed, iOS removes the app context and there is no website option that can keep it running or receive notifications until the user installs/opens it again.
 
 ## Deploy to Vercel
 
@@ -38,6 +52,7 @@ Use these environment variables in Vercel:
 ```text
 VITE_SUPABASE_URL
 VITE_SUPABASE_ANON_KEY
+VITE_VAPID_PUBLIC_KEY
 ```
 
 Add them in Vercel under **Project Settings > Environment Variables**, then deploy. Without these variables, the app can still use the built-in Supabase fallback, but keeping them in Vercel makes the production setup easier to change later.
@@ -50,6 +65,18 @@ Add them in Vercel under **Project Settings > Environment Variables**, then depl
 - `src/shared/` - reusable components that can be used anywhere
 - `src/styles/` - Tailwind layers and custom app styling
 - `pics/` - local wallpaper images
+
+## ICM workflow
+
+This repo includes the source conventions from `RinDig/Interpreted-Context-Methdology` in `_core/` and applies them through local routing files:
+
+- `CLAUDE.md` - top-level workspace map
+- `CONTEXT.md` - task routing table
+- `setup/questionnaire.md` - one-time workspace setup questions
+- `shared/project-profile.md` - durable project context
+- `stages/` - intake, planning, implementation, and validation contracts
+
+For agent-based work, start with `CONTEXT.md`, then load only the relevant stage file.
 
 ## Folder structure
 
