@@ -51,7 +51,7 @@ const FACE_ID_USER_KEY = "my-tasks-face-id-user";
 const REMOTE_MIGRATION_KEY = "my-tasks-remote-migrated";
 const TASK_NOTIFICATION_KEY = "my-tasks-notification-enabled";
 const BACKGROUND_NOTIFICATION_KEY = "my-tasks-background-notification-enabled";
-const BACKGROUND_NOTIFICATION_STATUS_TIMEOUT_MS = 4200;
+const NOTIFICATION_PROMPT_DISMISSED_KEY = "my-tasks-notification-prompt-dismissed";
 const NOTIFICATION_READY_TIMEOUT_MS = 1200;
 const TASK_NOTIFICATION_THROTTLE_MS = 5000;
 const SITE_PASSWORD_HASH = "9e468432d7dde30ef9c431eb88b6951b2928dc337b88f349a5db9d124b88bada";
@@ -644,7 +644,14 @@ function TodoApp() {
   const [backgroundNotificationsEnabled, setBackgroundNotificationsEnabled] = useState(() => {
     return canUseBackgroundPushNotifications() && localStorage.getItem(BACKGROUND_NOTIFICATION_KEY) === "true";
   });
-  const [backgroundNotificationStatus, setBackgroundNotificationStatus] = useState("");
+  const [isNotificationSetupOpen, setIsNotificationSetupOpen] = useState(() => {
+    return (
+      canUseTaskNotifications() &&
+      Notification.permission !== "denied" &&
+      localStorage.getItem(NOTIFICATION_PROMPT_DISMISSED_KEY) !== "true" &&
+      localStorage.getItem(TASK_NOTIFICATION_KEY) !== "true"
+    );
+  });
   const [themeOverride, setThemeOverride] = useState(null);
   const applyingRemoteTasksRef = useRef(false);
   const notifiedTaskEventsRef = useRef(new Map());
@@ -672,29 +679,6 @@ function TodoApp() {
       )[0];
   }, [tasks]);
   const upcomingGroups = useMemo(() => createUpcomingGroups(tasks, currentMalaysiaTime), [currentMalaysiaTime, tasks]);
-  const notificationButtonLabel =
-    notificationPermission === "unsupported"
-      ? "Off"
-      : notificationPermission === "denied"
-        ? "Blocked"
-        : taskNotificationsEnabled
-          ? "On"
-          : "Allow";
-  const backgroundNotificationButtonLabel = !isBackgroundPushConfigured()
-    ? "Setup"
-    : notificationPermission === "denied"
-      ? "Blocked"
-      : backgroundNotificationsEnabled
-        ? "Bg On"
-        : "Bg";
-  const backgroundNotificationHelpText =
-    backgroundNotificationStatus ||
-    (!isBackgroundPushConfigured()
-      ? "Add the push keys in Vercel and Supabase first."
-      : backgroundNotificationsEnabled
-        ? "Background push is enabled on this device."
-        : "Tap Bg to allow closed-app push on this device.");
-
   const filteredTasks = useMemo(() => {
     let visibleTasks = tasks;
 
@@ -937,8 +921,6 @@ function TodoApp() {
 
   async function enableBackgroundNotifications() {
     if (!isBackgroundPushConfigured()) {
-      setBackgroundNotificationStatus("Setup needs VITE_VAPID_PUBLIC_KEY and the Supabase push function.");
-      window.setTimeout(() => setBackgroundNotificationStatus(""), BACKGROUND_NOTIFICATION_STATUS_TIMEOUT_MS);
       return;
     }
 
@@ -946,13 +928,6 @@ function TodoApp() {
       const result = await subscribeToTaskPushNotifications();
 
       if (!result.ok) {
-        setBackgroundNotificationStatus(
-          result.reason === "denied"
-            ? "Notifications are blocked in this browser."
-            : "This browser cannot use background push here.",
-        );
-        window.setTimeout(() => setBackgroundNotificationStatus(""), BACKGROUND_NOTIFICATION_STATUS_TIMEOUT_MS);
-
         if (result.reason === "denied") {
           setNotificationPermission("denied");
         }
@@ -970,15 +945,27 @@ function TodoApp() {
       setNotificationPermission("granted");
       setTaskNotificationsEnabled(true);
       setBackgroundNotificationsEnabled(true);
-      setBackgroundNotificationStatus("Background notifications enabled.");
-      window.setTimeout(() => setBackgroundNotificationStatus(""), BACKGROUND_NOTIFICATION_STATUS_TIMEOUT_MS);
     } catch (error) {
       console.warn("Could not enable background notifications.", error);
-      setBackgroundNotificationStatus("Could not enable background notifications yet.");
-      window.setTimeout(() => setBackgroundNotificationStatus(""), BACKGROUND_NOTIFICATION_STATUS_TIMEOUT_MS);
       backgroundNotificationsEnabledRef.current = false;
       setBackgroundNotificationsEnabled(false);
     }
+  }
+
+  async function completeNotificationSetup() {
+    await enableTaskNotifications();
+
+    if (isBackgroundPushConfigured()) {
+      await enableBackgroundNotifications();
+    }
+
+    localStorage.setItem(NOTIFICATION_PROMPT_DISMISSED_KEY, "true");
+    setIsNotificationSetupOpen(false);
+  }
+
+  function dismissNotificationSetup() {
+    localStorage.setItem(NOTIFICATION_PROMPT_DISMISSED_KEY, "true");
+    setIsNotificationSetupOpen(false);
   }
 
   function showCompletionReaction(taskId) {
@@ -1119,46 +1106,6 @@ function TodoApp() {
         <span className="flower-bed flower-right" />
       </div>
       <PixelBirds />
-
-      <div className="notification-toggle-group">
-        <button
-          type="button"
-          onClick={enableTaskNotifications}
-          disabled={notificationPermission === "unsupported"}
-          className="focus-ring notification-toggle inline-flex min-h-8 min-w-[54px] items-center justify-center gap-1 border-2 px-2 text-[10px] font-bold uppercase shadow-pixel transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:shadow-pixel"
-          aria-label={
-            notificationPermission === "granted"
-              ? "Task notifications are on"
-              : "Enable task notifications"
-          }
-          title="Notify this device when another device adds or completes tasks"
-        >
-          <BellRing className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>{notificationButtonLabel}</span>
-        </button>
-        <button
-          type="button"
-          onClick={enableBackgroundNotifications}
-          disabled={notificationPermission === "denied"}
-          className="focus-ring notification-toggle inline-flex min-h-8 min-w-[58px] items-center justify-center gap-1 border-2 px-2 text-[10px] font-bold uppercase shadow-pixel transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:shadow-pixel"
-          aria-label={
-            backgroundNotificationsEnabled
-              ? "Background task notifications are on"
-              : "Enable background task notifications"
-          }
-          title={
-            isBackgroundPushConfigured()
-              ? "Allow closed-app push notifications on this installed PWA"
-              : "Add VITE_VAPID_PUBLIC_KEY and deploy the notify-task-change function to enable background push"
-          }
-        >
-          <BellRing className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>{backgroundNotificationButtonLabel}</span>
-        </button>
-      </div>
-      <p className="background-notification-status" role="status">
-        {backgroundNotificationHelpText}
-      </p>
 
       {gardenCompanions.map((cat, index) => (
         <WalkingCharacter
@@ -1354,6 +1301,57 @@ function TodoApp() {
       </section>
 
       <AnimatePresence>
+        {isNotificationSetupOpen && (
+          <motion.div
+            className="fixed inset-0 z-50 grid place-items-center bg-[#1d1209]/45 px-4 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.section
+              className="notification-setup-card w-full max-w-[360px] border-4 p-5 text-center shadow-pixel"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="notification-setup-title"
+              initial={{ opacity: 0, scale: 0.96, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            >
+              <div className="mx-auto mb-3 grid h-14 w-14 place-items-center border-4 bg-[#fffdf1] shadow-pixel">
+                <BellRing className="h-7 w-7 text-[#3d6d37]" aria-hidden="true" />
+              </div>
+              <h2 id="notification-setup-title" className="text-xl font-black uppercase text-[#2f5f34]">
+                Allow Notifications
+              </h2>
+              <p className="mt-2 text-sm font-bold leading-6 text-[#5d794a]">
+                Get alerts when another person adds a task or marks one complete, including background push when this device supports it.
+              </p>
+              {!isBackgroundPushConfigured() && (
+                <p className="mt-3 border-2 border-[#d8c16f] bg-[#fff4bd] px-3 py-2 text-[11px] font-bold uppercase leading-4 text-[#7a6128]">
+                  Background push needs the VAPID key and Supabase push function before it can turn on.
+                </p>
+              )}
+              <div className="mt-5 grid gap-3">
+                <button
+                  type="button"
+                  onClick={completeNotificationSetup}
+                  className="focus-ring inline-flex min-h-12 items-center justify-center gap-2 border-2 border-[#5f8f4d] bg-[#dff0b6] px-4 text-sm font-black uppercase text-[#2f5f34] shadow-pixel transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
+                >
+                  <BellRing className="h-4 w-4" aria-hidden="true" />
+                  Allow
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissNotificationSetup}
+                  className="focus-ring min-h-11 border-2 border-[#b5a06a] bg-[#fffdf1] px-4 text-xs font-black uppercase text-[#7a6128] shadow-pixel transition hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-none"
+                >
+                  Later
+                </button>
+              </div>
+            </motion.section>
+          </motion.div>
+        )}
+
         {isClearDialogOpen && (
           <motion.div
             className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4 backdrop-blur-sm"
