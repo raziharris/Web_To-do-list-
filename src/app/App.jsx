@@ -9,7 +9,6 @@ import {
   LockKeyhole,
   Moon,
   Plus,
-  Sparkles,
   Sun,
   Trash2,
   X,
@@ -113,6 +112,31 @@ function getTaskTimeValue(task) {
 function parseDateKey(dateKey) {
   const [year, month, day] = dateKey.split("-").map(Number);
   return new Date(year, month - 1, day);
+}
+
+function formatDaysLeft(dateKey, date = new Date()) {
+  if (!dateKey) {
+    return "No date";
+  }
+
+  const dueDate = parseDateKey(dateKey);
+  const startOfToday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const daysLeft = Math.round((dueDate.getTime() - startOfToday.getTime()) / msPerDay);
+
+  if (daysLeft === 0) {
+    return "Today";
+  }
+
+  if (daysLeft === 1) {
+    return "1 day left";
+  }
+
+  if (daysLeft > 1) {
+    return `${daysLeft} days left`;
+  }
+
+  return `${Math.abs(daysLeft)} days overdue`;
 }
 
 function addDays(date, days) {
@@ -678,6 +702,8 @@ function TodoApp() {
           (firstTask.createdAt || 0) - (secondTask.createdAt || 0),
       )[0];
   }, [tasks]);
+  const nextTaskDateLabel = nextTask?.dueDate ? taskDateFormatter.format(parseDateKey(nextTask.dueDate)) : "No due date";
+  const nextTaskDaysLeft = nextTask ? formatDaysLeft(nextTask.dueDate, currentMalaysiaTime) : "Clear";
   const upcomingGroups = useMemo(() => createUpcomingGroups(tasks, currentMalaysiaTime), [currentMalaysiaTime, tasks]);
   const filteredTasks = useMemo(() => {
     let visibleTasks = tasks;
@@ -1181,48 +1207,47 @@ function TodoApp() {
             }`}
             data-cat-zone="tasks"
           >
-            <header className="app-header mb-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center">
-                  <h1 className="app-title truncate text-3xl leading-none text-[#241609] sm:text-4xl">JomSettle</h1>
-                </div>
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className="focus-ring inline-flex h-10 shrink-0 items-center gap-2 border-2 border-[#93b56f] bg-[#fffdf1] px-3 text-[#49623a] shadow-pixel transition hover:-translate-y-0.5 hover:bg-[#edf4c9] sm:h-11"
-                  aria-label={isDark ? "Switch to day mode" : "Switch to night mode"}
-                >
-                  {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-                  <span className="hidden text-xs font-bold uppercase tracking-[0.08em] sm:inline">
-                    {isDark ? "Night" : "Day"}
-                  </span>
-                </button>
-              </div>
-
-            </header>
+            <div className="mb-3 flex justify-end">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="theme-toggle-floating focus-ring inline-flex min-h-11 items-center gap-2 border-2 px-3 font-bold shadow-pixel transition hover:-translate-y-0.5"
+                aria-label={isDark ? "Switch to day mode" : "Switch to night mode"}
+              >
+                {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                <span className="text-xs uppercase tracking-[0.08em]">{isDark ? "Night" : "Day"}</span>
+              </button>
+            </div>
 
             <section
-              className="next-task-card next-task-feature today-card-modern mb-4 flex gap-3 border-4 border-[#6d4320] bg-[#fff0bf] p-3 font-bold shadow-pixel"
+              className="next-task-card today-card-modern mb-4 border-2 border-[#b88947] bg-[#fffdf1] p-4 font-bold shadow-pixel sm:p-5"
               aria-label="Next task"
             >
-              <div className="grid h-12 w-12 shrink-0 place-items-center border-2 border-[#5d3a1c] bg-[#4b2b16] text-[#fff7d8] shadow-pixel">
-                {nextTask ? <Sparkles className="h-6 w-6" aria-hidden="true" /> : <CheckCircle2 className="h-6 w-6" aria-hidden="true" />}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <p className="text-[11px] uppercase leading-4 tracking-[0.08em] text-[#7a5124]">Focus now</p>
-                  <span className="inline-flex items-center gap-1 border-2 border-[#93b56f] bg-[#fffdf1] px-2 py-0.5 text-[10px] uppercase leading-4 text-[#49623a]">
-                    <CalendarDays className="h-3 w-3" aria-hidden="true" />
-                    {nextTask ? taskDateFormatter.format(new Date(`${nextTask.dueDate}T00:00:00`)) : "Clear"}
-                  </span>
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="next-task-kicker text-xs uppercase leading-4 tracking-[0.08em]">Next task</p>
+                  <h2 className="next-task-title mt-2 max-w-full break-words text-2xl leading-8 [overflow-wrap:anywhere]">
+                    {nextTask ? nextTask.title : "All tasks done"}
+                  </h2>
                 </div>
-                <p className="max-w-full break-words text-lg leading-6 text-[#241609] [overflow-wrap:anywhere]">
-                  {nextTask ? nextTask.title : "All tasks done"}
-                </p>
+                <span className="next-task-days shrink-0 border-2 px-3 py-1.5 text-xs uppercase leading-4">
+                  {nextTaskDaysLeft}
+                </span>
               </div>
+              {nextTask ? (
+                <div className="next-task-meta mt-3 flex items-center gap-1.5 text-sm leading-5">
+                  <CalendarDays className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <time dateTime={nextTask.dueDate}>{nextTaskDateLabel}</time>
+                </div>
+              ) : (
+                <p className="next-task-meta mt-3 flex items-center gap-1.5 text-sm leading-5">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  No pending tasks
+                </p>
+              )}
             </section>
 
-            <div className="mb-3 flex items-stretch gap-2">
+            <div className="task-toolbar mb-3 flex items-stretch gap-2">
               <div className="min-w-0 flex-1">
                 <FilterTabs filters={taskFilters} activeFilter={activeFilter} onChange={setActiveFilter} />
               </div>
@@ -1230,7 +1255,7 @@ function TodoApp() {
                 type="button"
                 onClick={() => setIsClearDialogOpen(true)}
                 disabled={tasks.length === 0}
-                className="focus-ring clear-task-button grid min-h-12 w-12 shrink-0 place-items-center border-2 shadow-pixel transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                className="focus-ring clear-task-button grid min-h-11 w-11 shrink-0 place-items-center border-2 shadow-pixel transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
                 aria-label="Clear tasks"
                 title="Clear tasks"
               >
@@ -1239,29 +1264,31 @@ function TodoApp() {
             </div>
 
             <div className="flex flex-1 flex-col space-y-3">
-              <form onSubmit={addTask} className="add-task-input flex flex-wrap items-center gap-2.5 px-3 py-3 sm:px-4" data-cat-zone="input">
-                <motion.button
-                  whileTap={{ scale: 0.92 }}
-                  type="submit"
-                  className="focus-ring add-task-button grid h-12 w-12 shrink-0 place-items-center text-[#42270f] transition hover:-translate-y-0.5 sm:h-14 sm:w-14"
-                  aria-label="Add task"
-                >
-                  <Plus className="h-8 w-8 sm:h-9 sm:w-9" aria-hidden="true" />
-                </motion.button>
-                <label htmlFor="task-input" className="sr-only">
-                  New task
-                </label>
-                <input
-                  id="task-input"
-                  value={newTask}
-                  onChange={(event) => setNewTask(event.target.value)}
-                  className="focus-ring min-h-12 min-w-0 flex-[1_1_220px] bg-transparent text-lg font-semibold leading-7 text-[#2d1b0b] outline-none placeholder:text-[#9c7847] sm:min-h-14 sm:text-xl"
-                  placeholder=""
-                  maxLength={120}
-                  autoComplete="off"
-                />
-                <span className="add-task-date inline-flex min-h-10 min-w-0 items-center gap-2 px-2 text-xs font-bold uppercase tracking-[0.08em] text-[#7a5124] sm:min-h-12">
-                  <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+              <form onSubmit={addTask} className="add-task-input flex flex-col gap-3 px-3.5 py-3.5 sm:px-4" data-cat-zone="input">
+                <div className="flex items-center gap-2.5">
+                  <label htmlFor="task-input" className="sr-only">
+                    New task
+                  </label>
+                  <input
+                    id="task-input"
+                    value={newTask}
+                    onChange={(event) => setNewTask(event.target.value)}
+                    className="add-task-field focus-ring min-h-12 min-w-0 flex-1 border-0 bg-transparent text-base font-bold leading-6 outline-none sm:text-lg"
+                    placeholder="Add a new task..."
+                    maxLength={120}
+                    autoComplete="off"
+                  />
+                  <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    type="submit"
+                    className="focus-ring add-task-button grid h-11 w-11 shrink-0 place-items-center transition hover:-translate-y-0.5"
+                    aria-label="Add task"
+                  >
+                    <Plus className="h-6 w-6" aria-hidden="true" />
+                  </motion.button>
+                </div>
+                <span className="add-task-date inline-flex min-h-8 min-w-0 items-center gap-2 px-1 text-xs font-bold">
+                  <CalendarDays className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                   <span className="truncate">{taskDateFormatter.format(new Date(`${selectedDate}T00:00:00`))}</span>
                 </span>
               </form>
@@ -1363,7 +1390,7 @@ function TodoApp() {
               role="dialog"
               aria-modal="true"
               aria-labelledby="clear-tasks-title"
-              className="w-full max-w-md rounded-[1.5rem] border border-white/70 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-slate-900"
+              className="w-full max-w-md rounded-[1.5rem] border border-white/70 bg-white p-5 shadow-2xl dark:border-[#b9933f]/45 dark:bg-[#17140e]"
               initial={{ opacity: 0, scale: 0.96, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 16 }}
@@ -1371,17 +1398,17 @@ function TodoApp() {
             >
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div>
-                  <h2 id="clear-tasks-title" className="text-xl font-semibold text-slate-900 dark:text-white">
+                  <h2 id="clear-tasks-title" className="text-xl font-semibold text-slate-900 dark:text-[#f4e7bf]">
                     Delete tasks
                   </h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-300">
+                  <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-[#c8ad63]">
                     Choose what you want to remove from your list.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsClearDialogOpen(false)}
-                  className="focus-ring grid h-9 w-9 shrink-0 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white"
+                  className="focus-ring grid h-9 w-9 shrink-0 place-items-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:text-[#c8ad63] dark:hover:bg-[#231e14] dark:hover:text-[#e0bd62]"
                   aria-label="Close clear tasks dialog"
                 >
                   <X className="h-4 w-4" aria-hidden="true" />
@@ -1409,7 +1436,7 @@ function TodoApp() {
                 <button
                   type="button"
                   onClick={() => setIsClearDialogOpen(false)}
-                  className="focus-ring min-h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-white/10 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="focus-ring min-h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-[#b9933f]/40 dark:bg-[#231e14] dark:text-[#f4e7bf] dark:hover:bg-[#17140e]"
                 >
                   Cancel
                 </button>

@@ -52,6 +52,33 @@ function formatTaskDateLabel(dateKey) {
   return `Later · ${shortDate}`;
 }
 
+function getDaysLeft(dateKey) {
+  if (!dateKey) {
+    return null;
+  }
+
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const dueDate = new Date(year, month - 1, day);
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const daysLeft = Math.round((dueDate.getTime() - startOfToday.getTime()) / msPerDay);
+
+  if (daysLeft === 0) {
+    return "Today";
+  }
+
+  if (daysLeft === 1) {
+    return "1 day left";
+  }
+
+  if (daysLeft > 1) {
+    return `${daysLeft} days left`;
+  }
+
+  return `${Math.abs(daysLeft)} days overdue`;
+}
+
 function TaskItem({ task, onToggle, onDelete, onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
@@ -121,7 +148,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
         whileHover={!isEditing ? { y: -2 } : undefined}
         whileTap={!isEditing ? { scale: 0.985 } : undefined}
         onClick={toggleFromCard}
-        className={`pixel-row group relative flex cursor-pointer touch-pan-y items-start gap-3 overflow-hidden px-3 py-3 transition sm:items-center sm:px-4 ${
+        className={`pixel-row group relative flex cursor-pointer touch-pan-y items-start gap-3 overflow-hidden px-3.5 py-3.5 transition sm:gap-4 sm:px-4 ${
           task.completed ? "task-complete opacity-70" : "task-active"
         }`}
         data-cat-zone="task"
@@ -129,7 +156,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
       <button
         type="button"
         onClick={() => onToggle(task.id)}
-        className={`focus-ring grid h-7 w-7 shrink-0 place-items-center rounded-[4px] border-2 transition ${
+        className={`task-check-button focus-ring grid h-8 w-8 shrink-0 place-items-center rounded-[4px] border-2 transition ${
           task.completed
             ? "border-[#8c6a35] bg-[#39834a] text-[#fff4c8]"
             : "border-[#b88947] bg-[#fff7d8] text-transparent hover:bg-[#f2cf7c]"
@@ -158,10 +185,10 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
               <input
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                className="focus-ring min-h-10 min-w-0 w-full flex-1 border-2 border-[#b88947] bg-[#fff7d8] px-3 text-base outline-none"
+                className="task-edit-input focus-ring min-h-11 min-w-0 w-full flex-1 border-2 px-3 text-base font-bold outline-none"
                 autoFocus
               />
-              <button type="submit" className="focus-ring min-h-10 bg-[#f0c05b] px-3 text-sm font-semibold text-[#42270f] shadow-pixel">
+              <button type="submit" className="task-save-button focus-ring min-h-11 px-3 text-sm font-bold shadow-pixel">
                 Save
               </button>
             </motion.form>
@@ -173,47 +200,49 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
               exit={{ opacity: 0 }}
             >
               <p
-                className={`max-w-full whitespace-pre-wrap break-words text-[15px] font-bold leading-6 [overflow-wrap:anywhere] transition duration-300 sm:text-base sm:leading-7 ${
-                  task.completed
-                    ? "text-[#94713f] line-through decoration-[#39834a] decoration-2"
-                    : "text-[#2d1b0b]"
+                className={`task-title max-w-full whitespace-pre-wrap break-words text-base font-black leading-7 [overflow-wrap:anywhere] transition duration-300 sm:text-[17px] sm:leading-8 ${
+                  task.completed ? "is-complete line-through decoration-2" : ""
                 }`}
               >
                 {task.title}
               </p>
-              <span className="task-date-chip mt-1 inline-flex items-center gap-1 border-2 px-1.5 py-0.5 text-[9px] font-bold uppercase leading-3 sm:hidden" title={formatTaskDate(task.dueDate)}>
-                <CalendarDays className="h-3 w-3" aria-hidden="true" />
-                {formatTaskDateLabel(task.dueDate)}
-              </span>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
 
-      <span className="task-date-text hidden min-w-[96px] text-right text-xs font-bold sm:inline-block" title={formatTaskDate(task.dueDate)}>
-        {formatTaskDateLabel(task.dueDate)}
-      </span>
+        <div className="task-row-footer mt-3 flex flex-wrap items-center justify-between gap-2">
+          <span className="task-date-chip inline-flex max-w-full flex-wrap items-center gap-1.5 border-2 px-2.5 py-1.5 text-[11px] font-bold leading-4" title={formatTaskDate(task.dueDate)}>
+            <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>{formatTaskDateLabel(task.dueDate)}</span>
+            {task.dueDate ? (
+              <span className="task-days-left text-[10px] font-black">
+                {getDaysLeft(task.dueDate)}
+              </span>
+            ) : null}
+          </span>
 
-      <div className="flex shrink-0 items-center gap-1">
-        <button
-          type="button"
-          onClick={() => {
-            setDraft(task.title);
-            setIsEditing((current) => !current);
-          }}
-          className="focus-ring grid h-8 w-8 place-items-center text-[#a3793d] transition hover:text-[#704414]"
-          aria-label={isEditing ? "Cancel editing task" : "Edit task"}
-        >
-          {isEditing ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
-        </button>
-        <button
-          type="button"
-          onClick={() => onDelete(task.id)}
-          className="focus-ring grid h-8 w-8 place-items-center text-[#a3793d] transition hover:text-[#9c271d]"
-          aria-label="Delete task"
-        >
-          <Trash2 className="h-4 w-4" aria-hidden="true" />
-        </button>
+          <div className="task-row-actions ml-auto flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setDraft(task.title);
+                setIsEditing((current) => !current);
+              }}
+              className="task-action-button focus-ring grid h-9 w-9 place-items-center border-2 transition"
+              aria-label={isEditing ? "Cancel editing task" : "Edit task"}
+            >
+              {isEditing ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(task.id)}
+              className="task-action-button task-delete-button focus-ring grid h-9 w-9 place-items-center border-2 transition"
+              aria-label="Delete task"
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
       </div>
       </motion.article>
     </motion.div>

@@ -13,12 +13,12 @@ function FilterTabs({ filters, activeFilter, onChange }) {
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(filter)}
-            className="focus-ring relative min-h-12 flex-1 border-r-2 border-[#c2914e] px-4 text-sm font-bold text-[#2d1b0b] transition last:border-r-0 hover:bg-[#f6dc9d]"
+            className="filter-tab focus-ring relative min-h-11 flex-1 px-3 text-sm font-bold transition"
           >
             {isActive && (
               <motion.span
                 layoutId="active-filter"
-                className="absolute inset-0 bg-[#f0c05b] shadow-pixel"
+                className="filter-tab-active absolute inset-1"
                 transition={{ type: "spring", stiffness: 420, damping: 34 }}
               />
             )}
