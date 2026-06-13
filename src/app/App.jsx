@@ -1221,21 +1221,21 @@ function TodoApp() {
               className="next-task-card today-card-modern mb-4 border-2 border-[#b88947] bg-[#fffdf1] p-4 font-bold shadow-pixel sm:p-5"
               aria-label="Next task"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <p className="next-task-kicker text-xs uppercase leading-4 tracking-[0.08em]">Next task</p>
-                  <h2 className="next-task-title mt-2 max-w-full break-words text-2xl leading-8 [overflow-wrap:anywhere]">
-                    {nextTask ? nextTask.title : "All tasks done"}
-                  </h2>
-                </div>
-                <span className="next-task-days shrink-0 border-2 px-3 py-1.5 text-xs uppercase leading-4">
-                  {nextTaskDaysLeft}
-                </span>
+              <div>
+                <p className="next-task-kicker text-xs uppercase leading-4 tracking-[0.08em]">Next task</p>
+                <h2 className="next-task-title mt-2 w-full max-w-full break-words text-2xl leading-8 [overflow-wrap:anywhere]">
+                  {nextTask ? nextTask.title : "All tasks done"}
+                </h2>
               </div>
               {nextTask ? (
-                <div className="next-task-meta mt-3 flex items-center gap-1.5 text-sm leading-5">
-                  <CalendarDays className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <time dateTime={nextTask.dueDate}>{nextTaskDateLabel}</time>
+                <div className="next-task-meta mt-4 flex flex-wrap items-center gap-2 text-sm leading-5">
+                  <span className="inline-flex min-w-0 items-center gap-1.5">
+                    <CalendarDays className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <time dateTime={nextTask.dueDate}>{nextTaskDateLabel}</time>
+                  </span>
+                  <span className="next-task-days shrink-0 border-2 px-3 py-1.5 text-xs uppercase leading-4">
+                    {nextTaskDaysLeft}
+                  </span>
                 </div>
               ) : (
                 <p className="next-task-meta mt-3 flex items-center gap-1.5 text-sm leading-5">
