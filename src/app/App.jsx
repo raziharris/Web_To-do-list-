@@ -1142,7 +1142,17 @@ function TodoApp() {
         />
       ))}
 
-      <section className="mobile-view-scale relative z-10 mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-[430px] flex-col items-center justify-start">
+      <section className="mobile-view-scale relative z-10 mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-[430px] flex-col items-center justify-start pt-14">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="theme-toggle-floating focus-ring absolute right-0 top-0 inline-flex min-h-11 items-center gap-2 border-2 px-3 font-bold shadow-pixel transition hover:-translate-y-0.5"
+          aria-label={isDark ? "Switch to day mode" : "Switch to night mode"}
+        >
+          {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          <span className="text-xs uppercase tracking-[0.08em]">{isDark ? "Night" : "Day"}</span>
+        </button>
+
         <div className="malaysia-time-bar today-summary-card mb-3 flex w-full max-w-[430px] flex-col gap-2 px-3 py-2.5 text-[#3b2410]">
           <div className="flex min-w-0 items-start justify-between gap-3">
             <p className="min-w-0 flex-1 text-[13px] font-bold leading-5 text-[#241609] sm:text-sm">
@@ -1207,18 +1217,6 @@ function TodoApp() {
             }`}
             data-cat-zone="tasks"
           >
-            <div className="mb-3 flex justify-end">
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className="theme-toggle-floating focus-ring inline-flex min-h-11 items-center gap-2 border-2 px-3 font-bold shadow-pixel transition hover:-translate-y-0.5"
-                aria-label={isDark ? "Switch to day mode" : "Switch to night mode"}
-              >
-                {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-                <span className="text-xs uppercase tracking-[0.08em]">{isDark ? "Night" : "Day"}</span>
-              </button>
-            </div>
-
             <section
               className="next-task-card today-card-modern mb-4 border-2 border-[#b88947] bg-[#fffdf1] p-4 font-bold shadow-pixel sm:p-5"
               aria-label="Next task"
